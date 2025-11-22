@@ -1,0 +1,79 @@
+#работаем через bash, запускаем через контекстное меню ПКМ в папке с проектом
+
+#создает гит в текущей папке (скрытая папка .git)
+git init
+#возвращает статус гит в текущей папке
+git status
+
+#***********Создание SSH-ключа:
+#создает пару файлов ключа (private и public)
+#после -f - путь к файлу ключа и имя файла, папка .ssh будет создана в папке юзера windows
+#вместо Name пишем свое имя
+#далее спросит, создавать ли пароль. для публичного компьютера создаем
+#при вводе пароля напечатанное не отображается
+ssh-keygen -t ed25519 -C "Name" -f ~/.ssh/id_ed25519_Name
+#вернет код публичного ключа. копируем и добавляем в свой гитхаб аккаунт
+#GitHub.com → Settings → SSH and GPG keys
+cat ~/.ssh/id_ed25519_Name.pub
+#создаем конфигурационный файл, который будет выбирать ключ для логина
+touch ~/.ssh/config
+chmod 600 ~/.ssh/config
+notepad ~/.ssh/config
+#в файле пишем (сохраняем и закрываем):
+Host github-Name                        #локальный идентификатор
+    HostName github.com                 #не меняем
+    User git                            #не меняем
+    IdentityFile ~/.ssh/id_ed25519_Name #имя SSH ключа
+    IdentitiesOnly yes                  #не меняем
+#запускаем агента SSH-ключей
+eval "$(ssh-agent -s)"
+#тест, отвечаем yes, должно вернуть:
+#Warning: Permanently added 'github.com' (ED25519) to the list of known hosts.
+#Hi username! You've successfully authenticated, but GitHub does not provide shell access.
+ssh -T git@github-Name
+
+#***********Первичная настройка рабочей папки:
+#проверяем, есть ли ремоут в текущем гите (если его нет, то ничего не вернет)
+git remote -v
+#ассоциируем текущую папку с репозиторием (если ремоут был, то заменяем add на set-url):
+git remote add origin git@github-Name:GitHubAccName/RepoName.git
+#тест соединения
+git fetch origin
+#скачиваем репозиторий с гитхаба с сохранением локальных изменений...:
+git pull origin master
+#или стираем все локальное и заменяем на копию из репозитория
+git reset --hard origin/master
+
+#***********Типичный рабочий день:
+#инициализация (удобно, когда LocalName совпадает с GitHubName)
+git config user.name "LocalName"
+git config user.email "email@company.com"
+#старт агента
+eval "$(ssh-agent -s)"
+#если нужно сохранить какие-то локальные правки:
+git add .
+git commit -m "Какие-то локальные правки"
+#пулл (объединит ориджин с тем, что закоммитили выше)...
+git pull origin master
+#...или ресет:
+git reset --hard origin/master
+#после окончания работы добавляем в коммит всё (не рекомендуется)...:
+git add .
+#... или файлы, которые были изменены (настоятельно рекомендуется):
+git add FileName1.ext FileName2.ext Folder1/ Folder2/*.ext
+#коммитим локально
+git commit -m "Что-то сделано"
+#запихиваем в гитхаб (куда запихивать мы установили ранее, см. git remote)
+git push origin master
+
+#***********Скрипты:
+#выполнить один раз при создании скрипта (и закоммитить):
+chmod +x ScriptName.sh
+#пример скрипта (#!/bin/bash - первая строчка в скрипте):
+#!/bin/bash
+git config user.name "LocalName"
+git config user.email "email@company.com"
+eval $(ssh-agent -s)
+git status
+#запуск скрипта в bash:
+./ScriptName.sh
