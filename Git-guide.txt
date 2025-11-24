@@ -35,31 +35,36 @@ ssh -T git@github-Name
 #***********Первичная настройка рабочей папки:
 #проверяем, есть ли ремоут в текущем гите (если его нет, то ничего не вернет)
 git remote -v
-#ассоциируем текущую папку с репозиторием (если ремоут был, то заменяем add на set-url):
+#ассоциируем текущую папку с репозиторием (если ремоут был, то заменяем add на set-url)
 git remote add origin git@github-Name:GitHubAccName/RepoName.git
 #тест соединения
 git fetch origin
-#скачиваем репозиторий с гитхаба с сохранением локальных изменений...:
+#скачиваем репозиторий с гитхаба с сохранением локальных изменений...
 git pull origin master
 #или стираем все локальное и заменяем на копию из репозитория
 git reset --hard origin/master
 
 #***********Типичный рабочий день:
+#если меняем пользователя
+git remote set-url origin git@github-Name:GitHubAccName/RepoName.git
 #инициализация (удобно, когда LocalName совпадает с GitHubName)
 git config user.name "LocalName"
 git config user.email "email@company.com"
 #старт агента
 eval "$(ssh-agent -s)"
-#если нужно сохранить какие-то локальные правки:
+#проверяем, есть ли изменения на сервере github
+git fetch
+git status
+#если нужно сохранить какие-то локальные правки
 git add
 git commit -m "Какие-то локальные правки"
 #пулл (объединит ориджин с тем, что закоммитили выше)...
 git pull origin master
 #...или ресет:
 git reset --hard origin/master
-#после окончания работы добавляем в коммит всё (не рекомендуется)...:
+#после окончания работы добавляем в коммит всё (не рекомендуется)...
 git add .
-#... или файлы, которые были изменены (настоятельно рекомендуется):
+#... или файлы, которые были изменены (рекомендуется)
 git add FileName1.ext FileName2.ext Folder1/ Folder2/*.ext
 #коммитим локально
 git commit -m "Что-то сделано"
@@ -67,7 +72,7 @@ git commit -m "Что-то сделано"
 git push origin master
 
 #***********Скрипты:
-#выполнить один раз при создании скрипта (и закоммитить):
+#выполнить один раз при создании скрипта (и закоммитить)
 chmod +x ScriptName.sh
 #пример скрипта (#!/bin/bash - первая строчка в скрипте):
 #!/bin/bash
@@ -76,5 +81,5 @@ git config user.name "LocalName"
 git config user.email "email@company.com"
 eval $(ssh-agent -s)
 git status
-#запуск скрипта в bash:
+#запуск скрипта в bash
 ./ScriptName.sh
