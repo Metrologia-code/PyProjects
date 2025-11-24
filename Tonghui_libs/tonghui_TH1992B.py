@@ -143,6 +143,10 @@ class Device():
             self.rm = pyvisa.ResourceManager()
         Open = {'TCPIP':self._OpenTCPIP, 'USBTCM':self._OpenUSBTCM, }
         return Open[ConnectionMethod](**ConnectionDetails)
+    
+    def Initialize1(self, ConnectionMethod='TCPIP', **ConnectionDetails, ):
+        #для тестов
+        return True
 
     def GetParameter(self, CommandName, **Parameters):
         ''' метод для внешнего и внутреннего вызова
@@ -191,7 +195,7 @@ class Device():
         self.AllConfigs = configparser.ConfigParser()
         self.AllConfigs.optionxform = str
         #дефолтный или заданный путь к конфигурационному файлу
-        FilePath = FilePath or os.path.dirname(os.path.abspath(__file__)) + '\\Config\\'
+        FilePath = FilePath or os.path.dirname(os.path.abspath(__file__)) + '\\config\\'
         if not self.AllConfigs.read(FilePath + FileName):
             print(f'Не удалось считать файл: {FilePath + FileName}')
             return False
@@ -263,6 +267,7 @@ class Device():
         return DictData
 
     def SingleMeasure(self, ):
+        #для тестов
         return {
             'VOLTage1': round(random.uniform(0.5, 5.0), 4),
             'CURR1': round(random.uniform(0.001, 0.1), 6),
@@ -275,6 +280,10 @@ class Device():
     def GetIDN(self, ):
         #метод для внешнего вызова
         return self.tonghui.query("*IDN?")
+    
+    def GetIDN1(self, ):
+        #для тестов
+        return "TH1992B"
     
     def Close(self, ):
         #метод для внешнего вызова

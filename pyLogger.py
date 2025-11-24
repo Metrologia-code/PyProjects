@@ -4,7 +4,7 @@ import time, sys
 #пользовательские библиотеки
 from User_libs import PlotterClass, ParseLoggerArguments, CreateSavePath, FormatTime
 
-print('pyLogger v0.8.2 - 2025.11.19')
+print('pyLogger v0.8.3 - 2025.11.24')
 
 #структура стартовых аргументов:
 ''' DeviceName,        str,    имя используемого прибора
@@ -33,7 +33,7 @@ ConnectionDetails = {name: Arguments[name] for name in ConnectNames if name in A
 #библиотеки управления приборами
 from Tonghui_libs import tonghui_TH1992B, tonghui_TH2690A
 #создаем объект класса из библиотеки, соответствующей заданному имени прибора
-exec(f'DEVICE = {Arguments['DeviceName']}.Device()')
+exec(f"DEVICE = {Arguments['DeviceName']}.Device()")
 
 '''#пробуем подключиться к прибору
 if not DEVICE.Initialize(**ConnectionDetails):
@@ -89,15 +89,15 @@ def correct_sleep():
     
     t_temp = ttc['t_op_finish'] #костыль
     if (i/int(t_when/Arguments['MeasTime'])) % 1 == 0 and i > 0:
-        print(f' -- time_sofar={t_temp}')
-        print(f' -- time_expected={(i+1)*Arguments['MeasTime'] - time_to_sleep}')
+        print(f" -- time_sofar={t_temp}")
+        print(f" -- time_expected={(i+1)*Arguments['MeasTime'] - time_to_sleep}")
     
     if time_to_sleep > 0.001:
         time.sleep(time_to_sleep)
     else:
         #time.sleep(1)
         print(' _ ' + f'{datetime.now()}'[11:22]
-              + f' - время итерации превышено (sleep = {time_to_sleep:.3f})')
+              + f" - время итерации превышено (sleep = {time_to_sleep:.3f})")
 
 try:
     

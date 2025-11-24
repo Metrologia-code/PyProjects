@@ -49,14 +49,14 @@ def CreateSavePath(file, LAN_Path=None, ):
         формирует путь к папке для сохранения данных
         и создает в ней подпапку с текущей датой
         возвращает путь в виде строки '''
-    LoggerPath = os.path.dirname(os.path.abspath(file))
+    ProgramPath = os.path.dirname(os.path.abspath(file))
     TodayNameDir = '\\' + datetime.now().strftime("%Y_%m_%d") + '\\'
     #сохраняем в хранилище MetroBulk, если оно доступно
     if os.path.exists(LAN_Path):
         SavePath = LAN_Path + TodayNameDir
     #если подключение к MetroBulk отсутствует - сохраняем в местную папку Data
     else:
-        DataPath = LoggerPath + '\\Data'
+        DataPath = ProgramPath + '\\Data'
         #создаем папку Data в корне, если ее нет
         CreateDirIfNot(DataPath)
         SavePath = DataPath + TodayNameDir
