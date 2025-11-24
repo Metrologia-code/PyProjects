@@ -51,7 +51,7 @@ git config user.email "email@company.com"
 #старт агента
 eval "$(ssh-agent -s)"
 #если нужно сохранить какие-то локальные правки:
-git add .
+git add
 git commit -m "Какие-то локальные правки"
 #пулл (объединит ориджин с тем, что закоммитили выше)...
 git pull origin master
@@ -71,6 +71,7 @@ git push origin master
 chmod +x ScriptName.sh
 #пример скрипта (#!/bin/bash - первая строчка в скрипте):
 #!/bin/bash
+git remote set-url origin git@github-Name:GitHubAccName/RepoName.git
 git config user.name "LocalName"
 git config user.email "email@company.com"
 eval $(ssh-agent -s)
