@@ -1,4 +1,5 @@
-
+import time
+import numpy as np
 
 class Data():
 
@@ -33,91 +34,8 @@ class Sweeper():
                     'operation_time'               : 'T operation',
                  }
         
-    def Manual_sweep_prep(self, parameters):
 
-        #накопитель ошибок
-        feedback = []
-
-        channel, mode, awg = 1, 'VOLT', 'FIX'
-
-        #проверяем режим источника и меняем на напряжение, если необходимо
-        source_mode = self.tonghui.query(f':SOUR{channel}:FUNC:MODE?')
-        if source_mode != mode:
-            self.tonghui.write(f':SOUR{channel}:FUNC:MODE ' + mode), time.sleep(0.2)
-            source_mode = self.tonghui.query(f':SOUR{channel}:FUNC:MODE?')
-            if source_mode == mode:
-                print('Режим источника изменен на ' + source_mode)
-            else:
-                print(f':SOUR{channel}:FUNC:MODE?')
-                feedback.append(1)
-        else:
-            print('Режим источника - ' + source_mode)
-        
-        #проверяем форму сигнала источника и меняем на DC, если необходимо
-        volt_mode = self.tonghui.query(f':SOUR{channel}:VOLT:MODE?')
-        if volt_mode != awg:
-            self.tonghui.write(f':SOUR{channel}:VOLT:MODE ' + awg), time.sleep(0.2)
-            volt_mode = self.tonghui.query(f':SOUR{channel}:VOLT:MODE?')
-            if volt_mode == awg:
-                print('Форма сигнала источника изменена на ' + volt_mode)
-            else:
-                print(f':SOUR{channel}:VOLT:MODE?')
-                feedback.append(1)
-        else:
-            print('Форма сигнала источника - ' + volt_mode)
-        
-        time.sleep(0.1)
-        I_limit = parameters['I_limit'].get()
-        set_I_limit = f':SENS{channel}:CURR:PROT:LEV {I_limit}'
-        self.tonghui.write(set_I_limit), time.sleep(0.2)
-        if float(self.tonghui.query(f':SENS{channel}:CURR:PROT:LEV?')) != float(I_limit):
-            print(f':SENS{channel}:CURR:PROT:LEV?')
-            feedback.append(1)
-
-        time.sleep(0.1)
-        I_rng_AUTO = parameters['I_rng_AUTO'].get()
-        set_I_range_mode = f':SENS{channel}:CURR:RANG:AUTO {I_rng_AUTO}'
-        self.tonghui.write(set_I_range_mode), time.sleep(0.2)
-        if self.tonghui.query(f':SENS{channel}:CURR:RANG:AUTO?') != I_rng_AUTO:
-            print(f':SENS{channel}:CURR:RANG:AUTO?')
-            feedback.append(1)
-
-        time.sleep(0.1)
-        Aperture = parameters['Aperture'].get()
-        set_aperture = f':SENS{channel}:VOLT:APER {Aperture}'
-        self.tonghui.write(set_aperture), time.sleep(0.2)
-        if float(self.tonghui.query(f':SENS{channel}:VOLT:APER?')) != float(Aperture):
-            print(f':SENS{channel}:VOLT:APER?')
-            feedback.append(1)
-
-        time.sleep(0.1)
-        Source_start = parameters['Source start'].get()
-        set_output = f':SOUR{channel}:VOLT {Source_start}'
-        self.tonghui.write(set_output), time.sleep(0.2)
-        if float(self.tonghui.query(f':SOUR{channel}:VOLT?')) != float(Source_start):
-            print(f':SOUR{channel}:VOLT?')
-            feedback.append(1)
-
-        time.sleep(0.1)
-        measurement_points = int(parameters['Meas. p-ts'].get())
-        set_number_of_points = f':TRIG{channel}:ACQ:COUN {measurement_points}'
-        self.tonghui.write(set_number_of_points), time.sleep(0.2)
-        if int(self.tonghui.query(f':TRIG{channel}:ACQ:COUN?')) != measurement_points:
-            print(f':TRIG{channel}:ACQ:COUN?')
-            feedback.append(1)
-
-        time.sleep(0.1)
-        self.sweep_data_format = 'VOLTage,CURR,RES,TIME'
-        set_format = f':FORM:ELEM:SENS {self.sweep_data_format}'
-        self.tonghui.write(set_format), time.sleep(0.2)
-        if self.tonghui.query(':FORM:ELEM:SENS?') != self.sweep_data_format:
-            print(':FORM:ELEM:SENS?')
-            feedback.append(1)
-        
-        return len(feedback) < 1
-        
-
-    def Manual_sweep_stepbystep(self, gui, name, if_plot_clear, root, ):
+    def Manual_sweep_stepbystep(self, DEVICE, gui, name, if_plot_clear, root, ):
 
         ##############################################################################
         #если выбрана опция очищать, то удаляем все предыдущие линии
@@ -155,12 +73,14 @@ class Sweeper():
         source_stop = float(parameters['Source stop'].get())
         source_points = int(parameters['Source p-ts'].get())
         source_step = (source_stop-source_start)/(source_points-1)
-        aperture = float(parameters['Aperture'].get())
         measurement_points = int(parameters['Meas. p-ts'].get())
         
         T_operation = float(parameters['T operation'].get())
         T_after_step_sleep = float(parameters['Step sleep'].get())
-        T_trigger_expected = measurement_points * aperture + self.trigger_delta
+        #*********************************НУЖНО СЧИТАТЬ РЕАЛЬНУЮ АПЕРТУРУ!!!111111**************************************
+        T_trigger_expected = measurement_points * 0.02 + self.trigger_delta
+
+        ch = DEVICE.ChannelsList[0]
         
         data = {'V':[], 'I':[]}
         
@@ -173,8 +93,7 @@ class Sweeper():
                 if n != 0:
                     #устанавливаем следующее значение источника
                     source_value = source_start + source_step * n
-                    set_source_output_value_command = f':SOUR1:VOLT {source_value}'
-                    self.tonghui.write(set_source_output_value_command)
+                    DEVICE.tonghui.write(f':SOUR{ch}:VOLT {source_value}')
                     #step sleep
                     time.sleep(T_after_step_sleep)
                 
@@ -203,14 +122,16 @@ class Sweeper():
                 data_points = {'V':[], 'I':[]}
                 for m in range(measurement_points):
                     try:
-                        got_data = self.tonghui.query(':MEAS? (@1)').split(',')
+                        #got_data = DEVICE.tonghui.query(f':MEAS? (@{ch})').split(',')
+                        got_data = DEVICE.SingleMeasure()
                     except Exception as e:
                         print(e)
                         time.sleep(1)
                         break
                     else:
-                        data_points['V'].append(float(got_data[0]))
-                        data_points['I'].append(float(got_data[1]))
+                        V_name, I_name = f'VOLTage{ch}', f'CURR{ch}'
+                        data_points['V'].append(float(got_data[V_name]))
+                        data_points['I'].append(float(got_data[I_name]))
                 
                 if len(data_points['V']) > 1:
                 
@@ -247,5 +168,10 @@ class Sweeper():
         #gui.ax.relim(), gui.ax.autoscale_view()
         gui.ax.legend(loc='best', fontsize='x-small', markerscale=2.5)
         gui.canvas.draw_idle()
-            
+
+        if 'TH1992B' in DEVICE.Name:
+            DEVICE.ChannelsTurnOff()
+        
         return data
+
+    

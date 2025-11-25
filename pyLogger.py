@@ -35,12 +35,12 @@ from Tonghui_libs import tonghui_TH1992B, tonghui_TH2690A
 #создаем объект класса из библиотеки, соответствующей заданному имени прибора
 exec(f"DEVICE = {Arguments['DeviceName']}.Device()")
 
-'''#пробуем подключиться к прибору
+#пробуем подключиться к прибору
 if not DEVICE.Initialize(**ConnectionDetails):
     sys.exit(1)
 #конфигурируем прибор по пресету из ini-файла
 if not DEVICE.ConfigureDevice(ConfigName=Arguments['ConfigName'], ):
-    sys.exit(1)'''
+    sys.exit(1)
 
 #генератор пути к папке, в которую будут сохраняться данные
 SavePath = CreateSavePath(__file__, LAN_Path='\\\\MetroBulk\\Public\\EXP_DATA1')
@@ -73,13 +73,9 @@ if Arguments['EnablePlot']:
                        }
     Plotter = PlotterClass(Arguments['LineNames'], **PlotterArguments)
 
-
-
 ttc = {'t_op_start':0, 't_op_finish':0, 't_op_fact':0, }
 
 def correct_sleep():
-    
-    #всратое говно уже не помню как работает. но работает
 
     #время, затраченное с момента начала измерений
     ttc['t_op_finish'] = time.time() - tt1
@@ -154,7 +150,7 @@ try:
     print('...........')
     print('Время окончания измерений: \t'+f'{datetime.now()}'[:16])
     print(f'Полное время\t= {tt2:.3f} сек')
-    print(f'Ожидаемое время\t= {t_calc:.3f} сек')          
+    print(f'Ожидаемое время\t= {t_calc:.3f} сек')
 
 except KeyboardInterrupt:
     #CTRL+C
@@ -167,5 +163,7 @@ finally:
     if 'Plotter' in globals():
         Plotter.save_figure(FilePath)
     #прерываем связь с прибором
-    #DEVICE.Close()
+    if 'TH1992B' in Arguments['DeviceName']:
+        DEVICE.ChannelsTurnOff()
+    DEVICE.Close()
     

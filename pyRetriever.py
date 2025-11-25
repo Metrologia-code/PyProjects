@@ -25,17 +25,27 @@ ConfigDirectory = CurrentDirectory + '\\Retriever_libs\\config\\'
 SavePath = CreateSavePath(__file__, LAN_Path='\\\\MetroBulk\\Public\\EXP_DATA1')
 
 #версия программы для отображения в шапке, размер окна программы
-version_txt, root_size = 'pyRetriever v0.6.0 _ 2025.11.24', '1200x815'
+version_txt, root_size = 'pyRetriever v0.6.0 _ 2025.11.24', '1050x720'
 
 #загружаем файл с пресетами свипов
 sweep_config = configparser.ConfigParser()
 sweep_config.optionxform = str
 sweep_config.read(ConfigDirectory + 'sweep_config.ini')
 
+#считываем файл с пресетами
+DeviceConfigs = configparser.ConfigParser()
+DeviceConfigs.optionxform = str
+#путь к конфигурационному файлу
+FileName = 'Tonghui_TH1992B_config.ini'
+FilePath = os.path.dirname(os.path.abspath(__file__)) + '\\Tonghui_libs\\config\\'
+if not DeviceConfigs.read(FilePath + FileName):
+    print(f'Не удалось считать файл: {FilePath + FileName}')
+DeviceConfigNames = DeviceConfigs.sections()
+
 #создаем объект фреймворка tkinter
 root = tk.Tk()
 #создаем объект класса интерфейса
-gui = retriever_widgets.Widget(root, version_txt, root_size, sweep_config, )
+gui = retriever_widgets.Widget(root, version_txt, root_size, sweep_config, DeviceConfigNames, )
 #создаем объект класса управления прибором
 DEVICE = tonghui_TH1992B.Device()
 #создаем объект класса измерения ВАХ
@@ -88,8 +98,12 @@ for name in dependent_names:
 def tonghui_connect_pressed():
     if DEVICE.Initialize(ConnectionMethod='TCPIP', DeviceAddress='192.168.88.11', DevicePort='45454'):
         if 'TH1992B' in DEVICE.GetIDN():
-            CH1_state, CH2_state = int(DEVICE.GetParameter('ChannelState', ch='1')), int(DEVICE.GetParameter('ChannelState', ch='2'))
-            if CH1_state and CH2_state:
+            try:
+                CH1_state = int(DEVICE.GetParameter('ChannelState', ch='1'))
+                CH2_state = int(DEVICE.GetParameter('ChannelState', ch='2'))
+            except Exception as e:
+                print(e)
+            else:
                 gui.connection_status_lab.config(text='подключено')
                 gui.Ch1_toggle_btn.config(state='enabled')
                 gui.Ch2_toggle_btn.config(state='enabled')
@@ -134,9 +148,10 @@ def get_data_pressed():
 gui.get_data_but.configure(command=get_data_pressed)
 
 
-ChToggle_vars = {'1':gui.Ch1_toggle_var, '1':gui.Ch2_toggle_var}
 
 #переключатель канала
+#словарь с переменными переключаталей
+ChToggle_vars = {'1':gui.Ch1_toggle_var, '2':gui.Ch2_toggle_var}
 #переключатель галочки tkinter, когда мы нажимаем на него, сначала меняет значение, а потом выполняет код
 #поэтому сравниваем переменную переключателя с инвертированным значением считанного статуса канала
 #это ломает мозг, ну и что ж
@@ -228,67 +243,66 @@ gui.manual_control_buttons['get_all'].configure(command=get_all_manual_params)
 
 
 def run_sweep_preset(channel):
-    
     '''программное измерение по точкам'''
     
+    DevicePreset = gui.device_preset_var.get()
+    if not DevicePreset:
+        print('Пресет прибора не выбран')
+        return
+        
     #печать разделителя для красоты
     border = ''
     for i in range(80):
         border += '_'
     preset = gui.sweep_preset_var.get()
     print(border), print(f'{preset}: старт...')
+    
     #получаем значение галочки очищать ли плот
     #получить бы все параметры в дикт, эх
     if_plot_clear = gui.raw_check_var.get()
     
     #ЭТО ВСЕ НАПИСАНО ДЛЯ ТОЛСТОГО ТОНГХУЯ
-    #проверяем, включен ли канал
-    if DEVICE.GetParameter('ChannelState', ch=channel) == '0':
-        #настройка прибора
-        
-        sweep_prep = TH1992B.Manual_sweep_prep(gui.msweep_input_vars)
-        if sweep_prep is True:
-            print('Настройка источника, формы сигнала и ограничений: успешно')
-            #включаем канал
-            gui.Ch1_toggle_var.set(1), Ch1_toggle_btn_pressed()
-            #ждем, пока значение вывода источника установится
-            time.sleep(float(gui.msweep_input_vars['Init. sleep'].get()))
-            #если выбрана опция очищать, то стираем все, что было в данных
-            if if_plot_clear == 1:
-                SweeperData.values = {}
-            #генерируем имя набора данных
-            new_data_name = preset + ' : ' + datetime.now().time().strftime("%H:%M:%S")
-            #запускаем измерение
-            got_me_some_data = TH1992B.Manual_sweep_stepbystep(gui, new_data_name, if_plot_clear, root, )
-            #got_me_some_data = TH1992B.Manual_sweep(gui.msweep_input_vars)
-            SweeperData.values[new_data_name] = got_me_some_data
-            ###################################################################
-            #формирование строк данных для сохранения
-            n = len(SweeperData.values[new_data_name]['V'])
-            length = range(n)
-            #разделитель данных для записи в файл
-            delim = '\t'
-            #собираем заголовок
-            header = ''
-            data_keys = list(SweeperData.values[new_data_name].keys())
-            for data_key in data_keys:
-                header = header + data_key + delim
-            SweeperData.output = ''
-            SweeperData.output = SweeperData.output + header[:-1] + '\n'
-            #собираем данные в строку
-            for i in length:
-                ci = length.index(i)
-                V_str = str(SweeperData.values[new_data_name]['V'][ci])
-                I_str = str(SweeperData.values[new_data_name]['I'][ci])
-                SweeperData.output = SweeperData.output + V_str + delim + I_str + '\n'
-            ###################################################################
-            #выключаем канал
-            gui.Ch1_toggle_var.set(0), Ch1_toggle_btn_pressed()
-            print(f'{preset}: выполнен')
-        else:
-            print('Что-то пошло не так с настройкой!')
-    else:
-        print('Нельзя начать установку параметров, потому что канал включен!')
+    #конфигурируем прибор по пресету из ini-файла
+    if not DEVICE.ConfigureDevice(ConfigName={channel:DevicePreset}, ):
+        return
+    print('Настройка источника, формы сигнала и ограничений: успешно')
+    #ждем, пока значение вывода источника установится
+    time.sleep(float(gui.msweep_input_vars['Init. sleep'].get()))
+    #если выбрана опция очищать, то стираем все, что было в данных
+    if if_plot_clear == 1:
+        SweeperData.values = {}
+    #генерируем имя набора данных
+    new_data_name = preset + ' : ' + datetime.now().time().strftime("%H:%M:%S")
+    #запускаем измерение
+    got_me_some_data = Sweeper.Manual_sweep_stepbystep(DEVICE, gui, new_data_name, if_plot_clear, root, )
+    #got_me_some_data = TH1992B.Manual_sweep(gui.msweep_input_vars)
+    SweeperData.values[new_data_name] = got_me_some_data
+    ###################################################################
+    #формирование строк данных для сохранения
+    n = len(SweeperData.values[new_data_name]['V'])
+    length = range(n)
+    #разделитель данных для записи в файл
+    delim = '\t'
+    #собираем заголовок
+    header = ''
+    data_keys = list(SweeperData.values[new_data_name].keys())
+    for data_key in data_keys:
+        header = header + data_key + delim
+    SweeperData.output = ''
+    SweeperData.output = SweeperData.output + header[:-1] + '\n'
+    #собираем данные в строку
+    for i in length:
+        ci = length.index(i)
+        V_str = str(SweeperData.values[new_data_name]['V'][ci])
+        I_str = str(SweeperData.values[new_data_name]['I'][ci])
+        SweeperData.output = SweeperData.output + V_str + delim + I_str + '\n'
+    ###################################################################
+    #DEVICE.ConfigureDevice() должен был включить канал
+    #а Sweeper.Manual_sweep_stepbystep() - выключить
+    #проверяем статус канала и обновляем галочку
+    CH_state = int(DEVICE.GetParameter('ChannelState', ch=channel))
+    ChToggle_vars[channel].set(CH_state)
+    print(f'{preset}: выполнен')
 
 gui.src_sweep_but.configure(command=lambda: run_sweep_preset(gui.sweep_channel_var.get()[-1]))
 

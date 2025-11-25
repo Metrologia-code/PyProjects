@@ -35,6 +35,8 @@ eval "$(ssh-agent -s)"
 ssh -T git@github-Name
 
 #***********Первичная настройка рабочей папки:
+#для работы в сетевой папке
+git config --global --add safe.directory '//MetroBulk/Public/!Programs/!Metrologia_git'
 #проверяем, есть ли ремоут в текущем гите (если его нет, то ничего не вернет)
 git remote -v
 #ассоциируем текущую папку с репозиторием (если ремоут был, то заменяем add на set-url)

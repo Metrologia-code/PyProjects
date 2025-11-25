@@ -223,6 +223,14 @@ class Device():
             sens = 'CURR' if mode == 'VOLT' else 'VOLT'
             #словарь компонентов команд для SetParameter() и GetParameter()
             Parameters = {'ch':ch, 'mode':mode, 'sens':sens}
+            #проверяем, выключен ли канал. если включен - выключаем
+            state = self.GetParameter('ChannelState', ch=ch)
+            if not state:
+                return False
+            elif state == '1':
+                if not self.SetParameter('ChannelState', '0', ch=ch):
+                    print('Не удалось выключить канал перед настройкой')
+                    return False
             #итерируем параметры настроек и устанавливаем их
             for CommandName, CommandArgument in ConfigDict.items():
                 if not self.SetParameter(CommandName, CommandArgument, **Parameters):
@@ -245,7 +253,7 @@ class Device():
                     print(f'Канал {ch} удалось включить')
         return False
     
-    def SingleMeasure1(self, ):
+    def SingleMeasure(self, ):
         ''' универсальный метод для внешнего вызова
             возвращает измереные данные в виде {'DataName':Value, } или False '''
         #возможны два варианта провала: прибор вернул 'Invalid' или тайм-аут
@@ -266,7 +274,7 @@ class Device():
         DictData = dict(zip(self.DataNames, ListData))
         return DictData
 
-    def SingleMeasure(self, ):
+    def SingleMeasure1(self, ):
         #для тестов
         return {
             'VOLTage1': round(random.uniform(0.5, 5.0), 4),
@@ -284,7 +292,14 @@ class Device():
     def GetIDN1(self, ):
         #для тестов
         return "TH1992B"
-    
+
+    def ChannelsTurnOff(self, ):
+        #отключение каналов
+        #подразумевает, что был запущен ConfigureDevice()
+        for ch in self.ChannelsList:
+            if self.SetParameter('ChannelState', '0', ch=ch):
+                print(f'Канал {ch} отключен')
+        
     def Close(self, ):
         #метод для внешнего вызова
         print(f'{self.tonghui.query("*IDN?")} - отключение')

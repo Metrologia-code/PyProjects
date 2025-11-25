@@ -9,7 +9,7 @@ import itertools
 
 class Widget:
     
-    def __init__(self, root, version, rsize, sweep_config, ):
+    def __init__(self, root, version, rsize, sweep_config, DeviceConfigNames):
         
         self.root = root
         self.root.title(f'TH1992B Trigger retriever _ {version}')
@@ -257,29 +257,36 @@ class Widget:
                               ]
         
         IV_frame = IV_control_frame
-        manual_sweep_header = ttk.Label(IV_frame, text='Прогр-ное измерение',)
-        manual_sweep_header.grid(row=0, column=0, columnspan=2, sticky='nw', )
-
         
+        sweep_header_1 = ttk.Label(IV_frame, text='Выбор канала TH1992B:',)
+        sweep_header_1.grid(row=0, column=0, columnspan=2, sticky='nw', )
+
         #выбор канала
         self.sweep_channel_var = tk.StringVar()
         channel_options = ['Канал 1', 'Канал 2', ]
         self.sweep_channel_select = ttk.Combobox(IV_frame, textvariable=self.sweep_channel_var, width=20, values=channel_options, state='readonly', )
         self.sweep_channel_select.set(channel_options[0])
         self.sweep_channel_select.grid(row=1, column=0, columnspan=3, sticky='nw', **combo_options)
+
+        sweep_header_2 = ttk.Label(IV_frame, text='Выбор настроек TH1992B:',)
+        sweep_header_2.grid(row=2, column=0, columnspan=2, sticky='nw', )
         
         #выбор пресета прибора
         self.device_preset_var = tk.StringVar()
-        self.device_presets_select = ttk.Combobox(IV_frame, textvariable=self.device_preset_var, width=20, state='readonly', )
-        self.device_presets_select.grid(row=2, column=0, columnspan=3, sticky='nw', **combo_options)
+        self.device_presets_select = ttk.Combobox(IV_frame, textvariable=self.device_preset_var, width=20, values=DeviceConfigNames, state='readonly', )
+        #self.device_presets_select.set(DeviceConfigNames[0])
+        self.device_presets_select.grid(row=3, column=0, columnspan=3, sticky='nw', **combo_options)
+
+        sweep_header_3 = ttk.Label(IV_frame, text='Параметры сканирования:',)
+        sweep_header_3.grid(row=4, column=0, columnspan=2, sticky='nw', )
         
         #выбор пресета свипа
         self.sweep_preset_var = tk.StringVar()
         presets = sweep_config.sections()
         self.sweep_presets_select = ttk.Combobox(IV_frame, textvariable=self.sweep_preset_var, width=20, values=presets, state='readonly', )
-        self.sweep_presets_select.grid(row=3, column=0, columnspan=3, sticky='nw', **combo_options)
+        self.sweep_presets_select.grid(row=5, column=0, columnspan=3, sticky='nw', **combo_options)
 
-        sweep_row_start = 4
+        sweep_row_start = 6
         for name in msweep_input_names:
             i = msweep_input_names.index(name)
             self.msweep_input_vars[name] = tk.StringVar()
@@ -308,8 +315,8 @@ class Widget:
                                                         **combo_size, ) #values=options
             self.manual_input_buttons[name] = ttk.Button(manual_frame, text=name, width=10, state='enabled')
             
-            self.manual_input_boxes[name].grid(column=0, row=i, sticky='nw', **combo_options)
-            self.manual_input_buttons[name].grid(column=1, row=i, sticky='nw', )
+            #self.manual_input_boxes[name].grid(column=0, row=i, sticky='nw', **combo_options)
+            #self.manual_input_buttons[name].grid(column=1, row=i, sticky='nw', )
         
         #кнопки ручного управления
         self.manual_control_buttons = {}
@@ -318,7 +325,7 @@ class Widget:
         for name in manual_control_names:
             i = manual_control_names.index(name)
             self.manual_control_buttons[name] = ttk.Button(manual_frame, text=name, width=9, state='enabled')
-            self.manual_control_buttons[name].grid(column=i, row=len(manual_input_names), sticky='nw', padx=1, pady=2)
+            #self.manual_control_buttons[name].grid(column=i, row=len(manual_input_names), sticky='nw', padx=1, pady=2)
         
         #обновим объект ткинтера, чтобы получить размеры
         self.root.update()
