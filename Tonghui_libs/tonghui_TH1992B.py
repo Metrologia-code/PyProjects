@@ -151,28 +151,30 @@ class Device():
     def GetParameter(self, CommandName, **Parameters):
         ''' метод для внешнего и внутреннего вызова
             также используется в SetParameter()
-            возвращает считанную строку или False '''
+            возвращает считанную строку или пустую '''
         #
         command, _ = self.DeviceCommands[CommandName]
         try:
             return self.tonghui.query(command.format(val='?', **Parameters))
         except Exception as e:
             print(f'<{CommandName}> : не удалось считать\n{e}')
-            return False
+            return ''
 
-    def _NotationConverter(self, argument, notation=None)
-        ''' внутренний метод, конвертирует число в виде строки в научную нотацию и обратно
-            прибору всегда будем отправлять число в десятичной нотации 
-            notation может быть 'sci' или None '''
-        try:
-            FloatArg = float(argument)
-        except:
-            return argument
-        else:
-            if notation == 'sci':
-                return f'{FloatArg:.2e}'
-            else:
-                return f'{FloatArg:.5f}'
+    def _NotationConverter(self, argument, ):
+        ''' конвертирует строку в число, если это возможно 
+            возвращает либо аргумент без изменений, либо int, либо float '''
+        for converter in (int, float):
+            try:
+                return converter(argument)
+            except:
+                continue
+        return argument
+    
+    def _NotationFormatter(self, value, ):
+        ''' на случай, если придется писать числа прибору только в децимальной нотации '''
+        if isinstance(value, float):
+            return format(value, '.15f').rstrip('0').rstrip('.')
+        return value
     
     def SetParameter(self, CommandName, CommandArgument, **Parameters):
         ''' метод для внешнего и внутреннего вызова
@@ -180,14 +182,16 @@ class Device():
             пример команды прибора: :SENS{ch}:{sens}:RANG{val}
             после установки параметра проверяет, удалось ли установить
             возвращает True или False '''
-        #
+        #распаковка команды прибора
         command, pause  = self.DeviceCommands[CommandName]
-        #конвертируем нотацию аргумента в децимальную
-        CommandArgument = _NotationConverter(CommandArgument)
+        #конвертируем строку аргумента в число, если это число
+        CommandArgument = self._NotationConverter(CommandArgument)
         #устанавливаем значение параметра
         self.tonghui.write(command.format(val=f' {CommandArgument}', **Parameters))
         time.sleep(pause)
-        check = self.GetParameter(CommandName, **Parameters)
+        #конвертируем ответ прибора в число, если это число
+        check = self._NotationConverter( self.GetParameter(CommandName, **Parameters) )
+        #сравниваем либо строку со строкой, либо число с числом
         if check and check != CommandArgument:
             print(f'<{CommandName}> не удалось изменить на: {CommandArgument}')
             print(f'(Считанное значение: {check})')
