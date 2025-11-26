@@ -160,6 +160,20 @@ class Device():
             print(f'<{CommandName}> : не удалось считать\n{e}')
             return False
 
+    def _NotationConverter(self, argument, notation=None)
+        ''' внутренний метод, конвертирует число в виде строки в научную нотацию и обратно
+            прибору всегда будем отправлять число в десятичной нотации 
+            notation может быть 'sci' или None '''
+        try:
+            FloatArg = float(argument)
+        except:
+            return argument
+        else:
+            if notation == 'sci':
+                return f'{FloatArg:.2e}'
+            else:
+                return f'{FloatArg:.5f}'
+    
     def SetParameter(self, CommandName, CommandArgument, **Parameters):
         ''' метод для внешнего и внутреннего вызова
             использует словарь DeviceCommands = {'ИмяКоманды' : ['КодКоманды', 'Пауза'], }
@@ -168,6 +182,8 @@ class Device():
             возвращает True или False '''
         #
         command, pause  = self.DeviceCommands[CommandName]
+        #конвертируем нотацию аргумента в децимальную
+        CommandArgument = _NotationConverter(CommandArgument)
         #устанавливаем значение параметра
         self.tonghui.write(command.format(val=f' {CommandArgument}', **Parameters))
         time.sleep(pause)
