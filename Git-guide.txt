@@ -1,9 +1,12 @@
 #работаем через bash, запускаем через контекстное меню ПКМ в папке с проектом
 
+#***********Памятка:
 #создает гит в текущей папке (скрытая папка .git)
 git init
 #возвращает статус гит в текущей папке
 git status
+#откатывает состояние файла к последнему коммиту
+git restore file.py
 #проверить историю коммитов (-5 последние пять коммитов)
 git log --oneline -5
 
@@ -54,7 +57,7 @@ git remote set-url origin git@github-Name:GitHubAccName/RepoName.git
 #инициализация (удобно, когда LocalName совпадает с GitHubName)
 git config user.name "LocalName"
 git config user.email "email@company.com"
-#старт агента
+#старт агента ssh-ключей
 eval "$(ssh-agent -s)"
 #проверяем, есть ли изменения на сервере github
 git fetch

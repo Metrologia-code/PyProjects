@@ -4,7 +4,7 @@ import time, sys
 #пользовательские библиотеки
 from User_libs import PlotterClass, ParseLoggerArguments, CreateSavePath, FormatTime
 
-print('pyLogger v0.8.3 - 2025.11.24')
+print('pyLogger v0.8.4 - 2025.11.27')
 
 #структура стартовых аргументов:
 ''' DeviceName,        str,    имя используемого прибора
@@ -14,7 +14,7 @@ print('pyLogger v0.8.3 - 2025.11.24')
     DeviceSerial,      str,    серийный номер прибора
     ConfigName,        str/dict, имя пресета из ini файла
     MeasTime,          float,  желаемое время одного измерения, сек
-    MeasPoints,        int,  количество измерений (точек)
+    MeasPoints,        int,    количество измерений (точек)
     CanvasPoints,      int,    количество точек по оси х на графике
     EnablePlot,        bool,   Включение графика
     DataNames,         list,   имена данных, которые будут записаны в файл
@@ -149,8 +149,8 @@ try:
     #вывод текущего времени
     print('...........')
     print('Время окончания измерений: \t'+f'{datetime.now()}'[:16])
-    print(f'Полное время\t= {tt2:.3f} сек')
-    print(f'Ожидаемое время\t= {t_calc:.3f} сек')
+    print(f'Полное время\t= {FormatTime(tt2)}')
+    print(f'Ожидаемое время\t= {FormatTime(WholeTime)}')
 
 except KeyboardInterrupt:
     #CTRL+C

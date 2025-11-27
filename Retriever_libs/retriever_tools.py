@@ -74,13 +74,21 @@ class Sweeper():
         source_points = int(parameters['Source p-ts'].get())
         source_step = (source_stop-source_start)/(source_points-1)
         measurement_points = int(parameters['Meas. p-ts'].get())
+
+        initial_sleep = float(parameters['Init. sleep'].get())
         
         T_operation = float(parameters['T operation'].get())
         T_after_step_sleep = float(parameters['Step sleep'].get())
-        #*********************************НУЖНО СЧИТАТЬ РЕАЛЬНУЮ АПЕРТУРУ!!!111111**************************************
+        #******************НУЖНО СЧИТАТЬ РЕАЛЬНУЮ АПЕРТУРУ!!!111111******************
         T_trigger_expected = measurement_points * 0.02 + self.trigger_delta
 
         ch = DEVICE.ChannelsList[0]
+
+        #устанавливаем значение первой точки сканирования
+        if not DEVICE.SetParameter('SOURCE-value', str(source_start), mode='VOLT', ch=ch):
+            return False
+        #и ждём, пока сигнал установится...
+        time.sleep(initial_sleep)
         
         data = {'V':[], 'I':[]}
         

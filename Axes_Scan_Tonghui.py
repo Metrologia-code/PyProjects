@@ -33,23 +33,26 @@ def pos_to_x(axes, pos):
         return w*h
 
 #Выбор прибора 'tonghui_TH2690A' либо 'tonghui_TH1992B'
-device_name = 'tonghui_TH1992B' #Менять строку 
+device_name = 'tonghui_TH2690A' #Менять строку 
 exec(f'DEVICE = {device_name}.Device()')
-#адрес подключенияк к tonghui
-ConnectionDetails = {'ConnectionMethod':'TCPIP',
+#адрес подключенияк к tonghui_TH1992B
+_ConnectionDetails = {'ConnectionMethod':'TCPIP',
                      'DeviceAddress':'192.168.88.11',
                      'DevicePort':'45454', }
-'''ConnectionDetails = {'ConnectionMethod':'TCPIP',
-                     'DeviceAddress':'192.168.88.11',
-                     'DevicePort':'45454', }'''
+#адрес подключенияк к tonghui_TH2690A
+ConnectionDetails = {'ConnectionMethod':'TCPIP',
+                     'DeviceAddress':'192.168.88.12',
+                     'DevicePort':'45454', }
 
-#для TH1992B - словарь из одного элемента (также определяет канал)
-#для TH2690A - просто название пресета
 #!!!!!ACHTUNG!!!!! проверь пресет перед запуском !!!!!ACHTUNG!!!!!
-tonghui_preset = {'1':'TEST_CURR', }
-#Выбираем, что писать в файл и строить на графике
+#для TH1992B - словарь из одного элемента (также определяет канал)
+#tonghui_preset = {'1':'TEST_CURR', }
+#для TH2690A - просто название пресета
+tonghui_preset = 'PICOAMMETER_TEST_1'
+
+#Выбираем, что писать в файл и строить на графике (VOLTage, CURR, RES)
 #для TH1992B - с указанием канала, например, CURR1
-graph_data = 'CURR1'
+graph_data = 'CURR'
 
 #пробуем подключиться к tonghui
 if not DEVICE.Initialize(**ConnectionDetails):
@@ -61,7 +64,7 @@ if not DEVICE.ConfigureDevice(ConfigName=tonghui_preset, ):
 #подключаемся к контроллеру моторов осей
 acs = Controller(ip="192.168.88.10", port=701)
 
-#Списки для постраения графика
+#Списки для построения графика
 FPosition = list()
 Current = list()
 
@@ -104,7 +107,8 @@ fig = plt.figure(1, figsize=(8, 6))
 fig.clf()
 
 #генератор пути к папке, в которую будут сохраняться данные
-SavePath = CreateSavePath(__file__, LAN_Path='\\\\MetroBulk\\Public\\EXP_DATA1')
+#ВНИМАНИЕ! если путь не существует, то запись будет вестись в местную директорию Data
+SavePath = CreateSavePath(__file__, LAN_Path='\\\\MetroBulk\\Public\\EXP_DATA')
 #генерируем уникальное имя файла и добавляем путь к нему
 FilePath = SavePath + DEVICE.Name + ' ' + datetime.now().strftime("%Y-%m-%d %H-%M-%S") + '_axes_scan'
 
@@ -154,7 +158,7 @@ try:
             
             #Ждем, измеряем прибором Tonghui и время с начала эксперимента
             time.sleep(t)
-            #DEVICE.SingleMeasure() возвращает словарь вида {'VOLTage':value,'CURR':value,}
+            #DEVICE.SingleMeasure() возвращает словарь вида {'VOLTage':value, }
             results = DEVICE.SingleMeasure()
             result_time = time.time() - start_time
             print(*FP, *results)
@@ -172,16 +176,18 @@ try:
             plt.plot(FPosition, Current, color='#000066', lw=0.8, marker='o', markersize=1.5)
             plt.draw()
             plt.pause(0.01)
-
+    
+    #для TH1992B - отключаем канал
     if 'TH1992B' in DEVICE.Name:
         DEVICE.ChannelsTurnOff()
-    
     #прерываем связь с прибором
     DEVICE.Close()
+    
     plt.show()
 
 except KeyboardInterrupt:
     file.close()
+    #для TH1992B - отключаем канал
     if 'TH1992B' in DEVICE.Name:
         DEVICE.ChannelsTurnOff()
     #прерываем связь с прибором
