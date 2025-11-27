@@ -1,6 +1,5 @@
 @echo off
 cls
-pushd %~dp0
-python .\pyRetriever.py
-popd
+set "SCRIPT_DIR=%~dp0"
+python "%SCRIPT_DIR%pyRetriever.py"
 pause

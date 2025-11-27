@@ -1,7 +1,6 @@
 @echo off
 cls
-
-pushd %~dp0
+set "SCRIPT_DIR=%~dp0"
 
 :: Используемый прибор
 :: tonghui_TH2690A, tonghui_TH1992B
@@ -48,7 +47,7 @@ set YLabel=YLabel:I,A
 :: TRUE, FALSE
 set YTransform=YTransform:FALSE
 
-python .\pyLogger.py ^
+python "%SCRIPT_DIR%pyLogger.py" ^
 %DeviceName% ^
 %ConnectionMethod% ^
 %DeviceAddress% ^
@@ -64,5 +63,4 @@ python .\pyLogger.py ^
 %YLabel% ^
 %YTransform%
 
-popd
 pause
