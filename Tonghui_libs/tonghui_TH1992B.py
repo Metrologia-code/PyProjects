@@ -1,4 +1,5 @@
-import pyvisa, configparser, time, datetime, os.path, random
+import pyvisa, configparser, time, os.path, random
+from datetime import datetime
 
 class Device():
     ''' класс для работы с прибором
@@ -100,7 +101,8 @@ class Device():
             self.tonghui = self.rm.open_resource(Resource, read_termination='\n')
             print(f'{self.tonghui.query("*IDN?")} - подключено к {Resource}')
         except Exception as e:
-            print(f'{e}\nПодключиться к {Resource} не удалось')
+            #print(f'{e}\nПодключиться к {Resource} не удалось')
+            print(f'Подключиться к {Resource} не удалось')
             return False
         else:
             #проверяем очередь команд прибора

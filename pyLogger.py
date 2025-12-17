@@ -144,6 +144,11 @@ try:
 
             correct_sleep()
 
+        else:
+
+            if DEVICE.Initialize(**ConnectionDetails):
+                pass
+
     #считаем время, затраченное на выполнение программы
     tt2 = time.time()-tt1
     #вывод текущего времени

@@ -1,4 +1,5 @@
-import pyvisa, configparser, time, datetime, os.path
+import pyvisa, configparser, time, os.path
+from datetime import datetime
 
 class Device():
     '''
@@ -61,7 +62,8 @@ class Device():
             self.tonghui = self.rm.open_resource(Resource, read_termination='\n')
             print(f'{self.tonghui.query("*IDN?")} - подключено к {Resource}')
         except Exception as e:
-            print(f'{e}\nПодключиться к {Resource} не удалось')
+            #print(f'{e}\nПодключиться к {Resource} не удалось')
+            print(f'Подключиться к {Resource} не удалось')
             return False
         else:
             return True
@@ -200,12 +202,12 @@ class Device():
             if not self.SetParameter(CommandName, CommandArgument, **Parameters):
                 return False
         #в случае успешной настройки 'включаем канал'
-        if not self.SetParameter('DisplayPage', 'MEAS'):
+        '''if not self.SetParameter('DisplayPage', 'MEAS'):
             return False
         if not self.SetParameter('SourceSwitch', 'OFF'):
             return False  
         if not self.SetParameter('AmmeterSwitch', 'ON'):
-            return False
+            return False'''
         #запускаем измерение
         '''time.sleep(self.MassivePause)
         if not self.SetParameter('RunStop', 'RUN', ):
