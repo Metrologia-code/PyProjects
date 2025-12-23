@@ -8,6 +8,27 @@ from Motion_control import Controller
 #пользовательские библиотеки
 from User_libs import CreateSavePath
 
+def InitSpeed():
+    for ax in range(3):
+        acs.set_vel(ax,1)    # скорость
+        acs.set_acc(ax,5)    # ускорение/торможение
+        acs.set_jerk(ax,25)  # скорость изменения ускорения
+
+def PrintPosition():
+    print('APT/APL/APR/APB = ', round(acs.get_fpos(0), 3), '/',
+                                round(acs.get_fpos(1), 3), '/',
+                                round(acs.get_fpos(2), 3), '/',
+                                round(acs.get_fpos(3), 3))
+    print()
+
+def StartMove(used_axis: int, to_go: int):
+    acs.enable_axis(used_axis)
+    if abs(acs.get_fpos(used_axis) - to_go) > 0.001:
+        acs.ptp(used_axis, to_go)
+        print('Ось', used_axis, 'движется в ', to_go)
+    else:
+        print('Ось', used_axis, 'уже в позиции ', to_go, '±0.001')
+
 def pos_to_x(axes, pos):
     '''Метод получает список осей с их атрибутами и список их координат и 
     возвращает значение координаты Х для графика. Если оси перекрыты, возвращается ноль. 
@@ -76,26 +97,26 @@ t = 1
 axes= [
        {'name':     'APT',  #не менять
        'number':    0,      #не менять
-       'start':     -1.5,
-       'end':       3.5}, 
+       'start':     10,
+       'end':       10}, 
        
        {'name':     'APL',  #не менять
        'number':    1,      #не менять
-       'start':     0.5,
-       'end':       5.5}, 
+       'start':     2,
+       'end':       2}, 
        
        {'name':     'APR',  #не менять
        'number':    2,      #не менять
-       'start':     -0.5,
-       'end':       4.5}, 
+       'start':     2,
+       'end':       2}, 
        
        {'name':     'APB',  #не менять
        'number':    3,      #не менять
-       'start':     1.5,
-       'end':      6.5}
+       'start':     -6,
+       'end':       6}
        ]
 #Количество интервалов (установить требуемое значение)
-intervals = 100
+intervals = 60
 
 #Добовляем к словарям осей массивы координат и информацию об их использовании
 for ax in axes:
@@ -108,7 +129,8 @@ fig.clf()
 
 #генератор пути к папке, в которую будут сохраняться данные
 #ВНИМАНИЕ! если путь не существует, то запись будет вестись в местную директорию Data
-SavePath = CreateSavePath(__file__, LAN_Path='\\\\MetroBulk\\Public\\EXP_DATA')
+#SavePath = CreateSavePath(__file__, LAN_Path='\\\\MetroBulk\\Public\\EXP_DATA')
+SavePath = CreateSavePath(LAN_Path='\\\\MetroBulk\\Public\\EXP_DATA', )
 #генерируем уникальное имя файла и добавляем путь к нему
 FilePath = SavePath + DEVICE.Name + ' ' + datetime.now().strftime("%Y-%m-%d %H-%M-%S") + '_axes_scan'
 
@@ -116,6 +138,9 @@ try:
 
     #Подключаемся, устанавливаем оси в начальное положение и ненужные отключаем
     acs.connect()
+
+    InitSpeed()
+    
     for ax in axes:
         acs.enable_axis(ax['number'])
         time.sleep(0.30) #Надо внести задержку либо проверку статуса в метод enable_axis() класса Controller
@@ -125,6 +150,9 @@ try:
     for ax in axes:
         if not ax['is_used']:
             acs.disable_axis(ax['number'])
+
+    print('Стартуем из')
+    PrintPosition()
 
     #Время начала измерений
     start_time = time.time()
@@ -161,7 +189,7 @@ try:
             #DEVICE.SingleMeasure() возвращает словарь вида {'VOLTage':value, }
             results = DEVICE.SingleMeasure()
             result_time = time.time() - start_time
-            print(*FP, *results)
+            print(*FP, results['CURR'])
             
             #выполняем, если прибор вернул измерения
             if results:
@@ -171,7 +199,8 @@ try:
                 to_write = to_write + str(results[graph_data])
                 file.write(to_write+'\n')
             #Записываем данные в файл, добавляем к спискам для графика и перестраиваем график
-            FPosition.append(pos_to_x(axes, FP))
+            #FPosition.append(pos_to_x(axes, FP))
+            FPosition.append(cpos)
             Current.append(results[graph_data])
             plt.plot(FPosition, Current, color='#000066', lw=0.8, marker='o', markersize=1.5)
             plt.draw()

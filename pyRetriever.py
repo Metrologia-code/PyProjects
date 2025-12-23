@@ -23,7 +23,7 @@ CurrentDirectory = os.path.dirname(os.path.abspath(__file__))
 ConfigDirectory = CurrentDirectory + '\\Retriever_libs\\config\\'
 #генератор пути к папке, в которую будут сохраняться данные
 #если путь не существует, то быстрая запись будет вестись в местную директорию Data
-SavePath = CreateSavePath(__file__, LAN_Path='\\\\MetroBulk\\Public\\EXP_DATA')
+SavePath = CreateSavePath(LAN_Path='\\\\MetroBulk\\Public\\EXP_DATA', )
 
 #версия программы для отображения в шапке, размер окна программы
 version_txt, root_size = 'pyRetriever v0.6.0 _ 2025.11.24', '1050x720'

@@ -43,7 +43,8 @@ if not DEVICE.ConfigureDevice(ConfigName=Arguments['ConfigName'], ):
     sys.exit(1)
 
 #генератор пути к папке, в которую будут сохраняться данные
-SavePath = CreateSavePath(__file__, LAN_Path='\\\\MetroBulk\\Public\\EXP_DATA1')
+#SavePath = CreateSavePath(__file__, LAN_Path='\\\\MetroBulk\\Public\\EXP_DATA1')
+SavePath = CreateSavePath(LAN_Path='\\\\MetroBulk\\Public\\EXP_DATA', )
 #генерируем уникальное имя файла и добавляем путь к нему
 FilePath = SavePath + DEVICE.Name + ' ' + datetime.now().strftime("%Y-%m-%d %H-%M-%S")
 

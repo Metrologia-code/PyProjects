@@ -5,12 +5,12 @@ set "SCRIPT_DIR=%~dp0"
 :: Используемый прибор
 :: tonghui_TH2690A, tonghui_TH1992B
 :: Соответствует названию библиотеки прибора
-set DeviceName=DeviceName:tonghui_TH1992B
+set DeviceName=DeviceName:tonghui_TH2690A
 :: Тип используемого подключения
 :: TCPIP, USBTCM
 set ConnectionMethod=ConnectionMethod:TCPIP
 :: IP-адрес, установленный на приборе
-set DeviceAddress=DeviceAddress:192.168.88.11
+set DeviceAddress=DeviceAddress:192.168.88.12
 :: Порт подключения по TCPIP
 set DevicePort=DevicePort:45454
 :: Серийный номер прибора для подключения по USBTCM
@@ -19,28 +19,25 @@ set DeviceSerial=DeviceSerial:W152230156
 :: Для TH1992B - НомерКанала:ИмяПресета, получится dict
 :: Измерения будут сниматься только с указанных каналов
 :: ConfigName=ConfigName:1:TEST_VOLT,2:TEST_CURR
-set ConfigName=ConfigName:2:TEST_VOLT
+set ConfigName=ConfigName:PICOAMMETER_TEST_1
 :: Желаемое время одного измерения, сек
 :: Логгер будет рассчитывать и добавлять такую паузу,
 :: чтобы время измерения получалось желаемым
 :: Время одного запроса примерно равно 0.15 сек, 
 :: отрисовки плота - примерно 0.1 сек
 :: t_расч = t_одногозапроса + t_плота + aperture_прибора
-set MeasTime=MeasTime:0.5
+set MeasTime=MeasTime:1
 :: Количество измерений (точек) на эксперимент
-set MeasPoints=MeasPoints:72001
+set MeasPoints=MeasPoints:3601
 :: Количество точек по оси х на графике
-set CanvasPoints=CanvasPoints:3600
+set CanvasPoints=CanvasPoints:481
 :: Создавать ли график
 :: TRUE, FALSE
 set EnablePlot=EnablePlot:TRUE
-:: Имена данных, которые будут записаны в файл
-:: Для TH1992B полный набор данных с двух каналов выглядит так:
-:: VOLTage1,CURR1,RES1,VOLTage2,CURR2,RES2
-set DataNames=DataNames:VOLTage2,CURR2,RES2
+:: Имена данных, которые будут записаны в файл (VOLTage,CURR)
+set DataNames=DataNames:VOLTage,CURR
 :: Имена данных, которые будут на графике
-:: Для TH1992B добавить номер канала -  VOLTage1,CURR1,..
-set LineNames=LineNames:CURR2
+set LineNames=LineNames:CURR
 :: Название оси у на графике
 set YLabel=YLabel:I,A
 :: Преобразовывать ли измеренные данные

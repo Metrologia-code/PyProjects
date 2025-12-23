@@ -43,13 +43,17 @@ def CreateDirIfNot(dirpath):
     except:
         pass
 
-def CreateSavePath(file, LAN_Path=None, ):
+def CreateSavePath(LAN_Path=None, ):
     ''' file - путь к файлу, который вызвал функцию 
         LAN_Path - путь к файловому хранилищу
         формирует путь к папке для сохранения данных
         и создает в ней подпапку с текущей датой
         возвращает путь в виде строки '''
-    ProgramPath = os.path.dirname(os.path.abspath(file))
+    '''try:
+        ProgramPath = os.path.dirname(os.path.abspath(file))
+    except NameError:
+        ProgramPath = os.getcwd()'''
+    ProgramPath = os.getcwd()
     TodayNameDir = '\\' + datetime.now().strftime("%Y_%m_%d") + '\\'
     #сохраняем в хранилище MetroBulk, если оно доступно
     if os.path.exists(LAN_Path):
@@ -68,7 +72,6 @@ def CreateCameraPath(file, ):
     try:
         ProgramPath = os.path.dirname(os.path.abspath(file))
     except NameError:
-        # Если мы в Jupyter, берем текущую рабочую папку
         ProgramPath = os.getcwd()
     TodayNameDir = '\\' + datetime.now().strftime("%Y_%m_%d") + '\\'
     #сохраняем в хранилище MetroBulk, если оно доступно
