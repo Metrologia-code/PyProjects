@@ -64,6 +64,23 @@ def CreateSavePath(file, LAN_Path=None, ):
     CreateDirIfNot(SavePath)
     return SavePath
 
+def CreateCameraPath(file, ):
+    try:
+        ProgramPath = os.path.dirname(os.path.abspath(file))
+    except NameError:
+        # Если мы в Jupyter, берем текущую рабочую папку
+        ProgramPath = os.getcwd()
+    TodayNameDir = '\\' + datetime.now().strftime("%Y_%m_%d") + '\\'
+    #сохраняем в хранилище MetroBulk, если оно доступно
+
+    DataPath = ProgramPath + '\\OpenCV'
+    #создаем папку Data в корне, если ее нет
+    CreateDirIfNot(DataPath)
+    SavePath = DataPath + TodayNameDir
+    #создаем папку с текущей датой, если ее нет
+    CreateDirIfNot(SavePath)
+    return SavePath
+
 def FormatTime(seconds, ):
     m, s = divmod(int(seconds), 60)
     h, m = divmod(m, 60)
