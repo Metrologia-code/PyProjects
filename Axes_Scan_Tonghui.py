@@ -54,26 +54,29 @@ def pos_to_x(axes, pos):
         return w*h
 
 #Выбор прибора 'tonghui_TH2690A' либо 'tonghui_TH1992B'
-device_name = 'tonghui_TH2690A' #Менять строку 
+#device_name = 'tonghui_TH2690A' #Менять строку 
+device_name = 'tonghui_TH1992B' #Менять строку 
 exec(f'DEVICE = {device_name}.Device()')
 #адрес подключенияк к tonghui_TH1992B
-_ConnectionDetails = {'ConnectionMethod':'TCPIP',
-                     'DeviceAddress':'192.168.88.11',
-                     'DevicePort':'45454', }
+if device_name == 'tonghui_TH1992B':
+    ConnectionDetails = {'ConnectionMethod':'TCPIP',
+                         'DeviceAddress':'192.168.88.11',
+                         'DevicePort':'45454', }
+    #для TH1992B - словарь из одного элемента (также определяет канал)
+    tonghui_preset = {'2':'APL_I', }
+    #Выбираем, что писать в файл и строить на графике (VOLTage, CURR, RES)
+    #для TH1992B - с указанием канала, например, CURR1
+    graph_data = 'CURR2'
+    
 #адрес подключенияк к tonghui_TH2690A
-ConnectionDetails = {'ConnectionMethod':'TCPIP',
-                     'DeviceAddress':'192.168.88.12',
-                     'DevicePort':'45454', }
-
-#!!!!!ACHTUNG!!!!! проверь пресет перед запуском !!!!!ACHTUNG!!!!!
-#для TH1992B - словарь из одного элемента (также определяет канал)
-#tonghui_preset = {'1':'TEST_CURR', }
-#для TH2690A - просто название пресета
-tonghui_preset = 'PICOAMMETER_TEST_1'
-
-#Выбираем, что писать в файл и строить на графике (VOLTage, CURR, RES)
-#для TH1992B - с указанием канала, например, CURR1
-graph_data = 'CURR'
+if device_name == 'tonghui_TH2690A':
+    ConnectionDetails = {'ConnectionMethod':'TCPIP',
+                         'DeviceAddress':'192.168.88.12',
+                         'DevicePort':'45454', }
+    #для TH2690A - просто название пресета
+    tonghui_preset = 'PICOAMMETER_TEST_1'
+    #Выбираем, что писать в файл и строить на графике (VOLTage, CURR, RES)
+    graph_data = 'CURR'
 
 #пробуем подключиться к tonghui
 if not DEVICE.Initialize(**ConnectionDetails):
@@ -82,22 +85,25 @@ if not DEVICE.Initialize(**ConnectionDetails):
 if not DEVICE.ConfigureDevice(ConfigName=tonghui_preset, ):
     sys.exit(1)
 
-#подключаемся к контроллеру моторов осей
+#подключаемся к контроллеру моторов осей и устанавливаем скорости движения
 acs = Controller(ip="192.168.88.10", port=701)
-
+acs.connect()
+InitSpeed()
+ 
 #Списки для построения графика
 FPosition = list()
 Current = list()
 
 #Задержка перед измерением после остановки осей
-t = 1
+t = 0.1
 
 #Настройка осей. Для каждой оси нужно установить начальное и конечное положение.
 #Если они совпадают, ось приедет туда и дальше использоваться не будет.
+axis_toX = 0
 axes= [
        {'name':     'APT',  #не менять
        'number':    0,      #не менять
-       'start':     10,
+       'start':     -10,
        'end':       10}, 
        
        {'name':     'APL',  #не менять
@@ -112,16 +118,16 @@ axes= [
        
        {'name':     'APB',  #не менять
        'number':    3,      #не менять
-       'start':     -6,
-       'end':       6}
+       'start':     10,
+       'end':       10}
        ]
 #Количество интервалов (установить требуемое значение)
-intervals = 60
+intervals = 80
 
-#Добовляем к словарям осей массивы координат и информацию об их использовании
+#Добавляем к словарям осей массивы координат и информацию об их использовании
 for ax in axes:
-    ax['pos'] = np.linspace(ax['start'], ax['end'], intervals +1)
-    ax['is_used'] = ax['start'] != ax['end']
+    ax['pos'] = np.linspace(ax['start'], ax['end'], intervals + 1)
+    ax['is_used'] = ( ax['start'] != ax['end'] )
 
 #Открываем окно графика
 fig = plt.figure(1, figsize=(8, 6))
@@ -136,11 +142,11 @@ FilePath = SavePath + DEVICE.Name + ' ' + datetime.now().strftime("%Y-%m-%d %H-%
 
 try:
 
-    #Подключаемся, устанавливаем оси в начальное положение и ненужные отключаем
-    acs.connect()
-
-    InitSpeed()
-    
+    #Устанавливаем оси в начальное положение и ненужные отключаем
+    print()
+    print('Текущее положение осей')
+    PrintPosition()
+    print('Перемещаемся в начальную точку...') 
     for ax in axes:
         acs.enable_axis(ax['number'])
         time.sleep(0.30) #Надо внести задержку либо проверку статуса в метод enable_axis() класса Controller
@@ -151,24 +157,20 @@ try:
         if not ax['is_used']:
             acs.disable_axis(ax['number'])
 
+    time.sleep(4)
     print('Стартуем из')
     PrintPosition()
 
+    
     #Время начала измерений
     start_time = time.time()
 
     with open(FilePath+'.txt', 'x') as file:
-        #Подгатавливаем и записываем шапку в файл
+        #Подготавливаем и записываем шапку в файл
         header = 'time, s\t'
         for ax in axes:
             header += ax['name'] + ' position, mm\t'
         header += graph_data
-
-        #разделитель данных для записи в файл
-        #Delimiter = '\t'
-        #формируем заголовок
-        #Header = Delimiter.join(['time'] + Arguments['DataNames']) + '\n'
-        
         file.write(header + '\n')
 
         for cpos in range(intervals + 1):
@@ -189,19 +191,20 @@ try:
             #DEVICE.SingleMeasure() возвращает словарь вида {'VOLTage':value, }
             results = DEVICE.SingleMeasure()
             result_time = time.time() - start_time
-            print(*FP, results['CURR'])
+            print(*FP, results[graph_data])
             
             #выполняем, если прибор вернул измерения
             if results:
-                
                 #формируем строку из списка данных и записываем в файл
                 to_write = f'{result_time:.3f}\t{FP[0]:.3f}\t{FP[1]:.3f}\t{FP[2]:.3f}\t{FP[3]:.3f}\t'
                 to_write = to_write + str(results[graph_data])
                 file.write(to_write+'\n')
             #Записываем данные в файл, добавляем к спискам для графика и перестраиваем график
             #FPosition.append(pos_to_x(axes, FP))
-            FPosition.append(cpos)
+            #FPosition.append(cpos)  #это будет график от номера в цикле
+            FPosition.append(acs.get_fpos(axis_toX))
             Current.append(results[graph_data])
+            plt.clf()
             plt.plot(FPosition, Current, color='#000066', lw=0.8, marker='o', markersize=1.5)
             plt.draw()
             plt.pause(0.01)

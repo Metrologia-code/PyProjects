@@ -90,7 +90,7 @@ class Device():
             'FORMAT'          : [':FORM:ELEM:SENS{val}'            , self.Pause     ],
             #Статус канала
             #1, 0
-            'ChannelState'    : ['OUTP{ch}:STAT{val}'              , self.LongPause ],
+            'ChannelState'    : [':OUTP{ch}:STAT{val}'              , self.LongPause ],
         }
 
     def _OpenResource(self, Resource, ):
@@ -117,6 +117,7 @@ class Device():
             return True
     
     def _OpenTCPIP(self, DeviceAddress=None, DevicePort=None, **kwargs):
+#Q? зачем здесь **kwargs ? - в методе выше и ниже по цепочке вызовов оно отсутствует
         ''' используется в Initialize()
             возвращает True или False '''
         if not DeviceAddress or not DevicePort:
@@ -125,7 +126,8 @@ class Device():
         TCPIP = f'TCPIP0::{DeviceAddress}::{DevicePort}::SOCKET'
         return self._OpenResource(TCPIP)
 
-    def _OpenUSBTCM(self, DeviceSerial=None, **kwargs):
+    def _OpenUSBTCM(self, DeviceSerial=None, **kwargs): 
+#Q? зачем здесь **kwargs ? - в методе выше и ниже по цепочке вызовов оно отсутствует
         ''' используется в Initialize()
             возвращает True или False '''
         if not DeviceSerial:
@@ -190,6 +192,7 @@ class Device():
         CommandArgument = self._NotationConverter(CommandArgument)
         #устанавливаем значение параметра
         self.tonghui.write(command.format(val=f' {CommandArgument}', **Parameters))
+        print(command.format(val=f' {CommandArgument}', **Parameters))
         time.sleep(pause)
         #конвертируем ответ прибора в число, если это число
         check = self._NotationConverter( self.GetParameter(CommandName, **Parameters) )
