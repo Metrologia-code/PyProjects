@@ -60,7 +60,7 @@ def PosToAxis(axes, intervals):
         ax['pos'] = np.linspace(ax['start'], ax['end'], intervals + 1)
         ax['is_used'] = ( ax['start'] != ax['end'] )
 
-def MainMeasure(axes):
+def MainMeasure(axes, intervals, axisX = 0):
     #Списки для построения графика
     FPosition = list()
     Current_TH1992B = list()
@@ -100,27 +100,33 @@ def MainMeasure(axes):
                 dataTH2690A = eTH2690A.SingleMeasure()
                 result_time = time.time() - start_time
                 to_write = f'{result_time:.3f}\t'          
-                to_write = to_write + '{FP[0]:.3f}\t{FP[1]:.3f}\t{FP[2]:.3f}\t{FP[3]:.3f}\t'
-                to_write = to_write + str(dataTH1992B['CURR2'])
+                to_write = to_write + f'{FP[0]:.3f}\t{FP[1]:.3f}\t{FP[2]:.3f}\t{FP[3]:.3f}\t'
+                to_write = to_write + str(dataTH1992B['CURR2']) + '\t'
                 to_write = to_write + str(dataTH2690A['CURR'])
                 print(to_write)
                 file.write(to_write+'\n')
 
-                fig.clf()
+                #fig.clf()
                 FPosition.append(FP[axisX])
                 # На график выводим показания TH1992B, а по оси абсцисс axisX
                 Current_TH1992B.append(dataTH1992B['CURR2'])
-                axTH1992B.plot(FPosition, Current_TH1992B, 
-                               color='#000066', lw=0.8, marker='o', markersize=1.5)
                 # На график выводим показания TH2690A, а по оси абсцисс axisX
                 Current_TH2690A.append(dataTH2690A['CURR'])
-                axTH2690A.plot(FPosition, Current_TH2690A, 
-                               color='#000066', lw=0.8, marker='o', markersize=1.5)
-                fig.draw()
-                fig.pause(0.01)
-        fig.show()
+                #plt.show()
+                #fig.canvas.draw()
+                #fig.canvas.flush_events()
+                
+        axTH1992B.plot(FPosition, Current_TH1992B, 
+                       color='#000066', lw=0.8, marker='o', markersize=1.5)
+        axTH2690A.plot(FPosition, Current_TH2690A, 
+                       color='#000066', lw=0.8, marker='o', markersize=1.5)
+        plt.show()
+        plt.pause(0.1)
+        print('Закончил серию')
+        file.close()
     except KeyboardInterrupt:
         file.close()
+        print('У нас ошибка...')
 
 
 eTH1992B = tonghui_TH1992B.Device()
@@ -153,15 +159,15 @@ InitSpeed()
 #генератор пути к папке, в которую будут сохраняться данные
 #ВНИМАНИЕ! если путь не существует, то запись будет вестись в местную директорию Data
 #SavePath = CreateSavePath(__file__, LAN_Path='\\\\MetroBulk\\Public\\EXP_DATA')
-SavePath = CreateSavePath(LAN_Path='\\\\MetroBulk\\Public\\EXP_DATA\', )
+SavePath = CreateSavePath(LAN_Path='\\\\MetroBulk\\Public\\EXP_DATA', )
     
 #Настройка осей. Для каждой оси нужно установить начальное и конечное положение.
 #Если они совпадают, ось приедет туда и дальше использоваться не будет.
 axes= [
        {'name':     'APT',  #не менять
        'number':    0,      #не менять
-       'start':     10,
-       'end':       10}, 
+       'start':     -6,
+       'end':       6}, 
        
        {'name':     'APL',  #не менять
        'number':    1,      #не менять
@@ -175,11 +181,107 @@ axes= [
        
        {'name':     'APB',  #не менять
        'number':    3,      #не менять
+       'start':     2,
+       'end':       2}
+       ]
+PosToAxis(axes, intervals = 60)
+MainMeasure(axes, intervals = 60, axisX = 0)
+
+axes= [
+       {'name':     'APT',  #не менять
+       'number':    0,      #не менять
        'start':     -6,
+       'end':       6}, 
+       
+       {'name':     'APL',  #не менять
+       'number':    1,      #не менять
+       'start':     20,
+       'end':       20}, 
+       
+       {'name':     'APR',  #не менять
+       'number':    2,      #не менять
+       'start':     20,
+       'end':       20}, 
+       
+       {'name':     'APB',  #не менять
+       'number':    3,      #не менять
+       'start':     20,
+       'end':       20}
+       ]
+PosToAxis(axes, intervals = 60)
+MainMeasure(axes, intervals = 60, axisX = 0)
+
+axes= [
+       {'name':     'APT',  #не менять
+       'number':    0,      #не менять
+       'start':     6,
+       'end':       6}, 
+       
+       {'name':     'APL',  #не менять
+       'number':    1,      #не менять
+       'start':     -10,
+       'end':       20}, 
+       
+       {'name':     'APR',  #не менять
+       'number':    2,      #не менять
+       'start':     20,
+       'end':       20}, 
+       
+       {'name':     'APB',  #не менять
+       'number':    3,      #не менять
+       'start':     20,
+       'end':       20},
+       ]
+PosToAxis(axes, intervals = 60)
+MainMeasure(axes, intervals = 60, axisX = 1)
+
+axes= [
+       {'name':     'APT',  #не менять
+       'number':    0,      #не менять
+       'start':     0,
+       'end':       0}, 
+       
+       {'name':     'APL',  #не менять
+       'number':    1,      #не менять
+       'start':     -10,
+       'end':       20}, 
+       
+       {'name':     'APR',  #не менять
+       'number':    2,      #не менять
+       'start':     6,
+       'end':       6}, 
+       
+       {'name':     'APB',  #не менять
+       'number':    3,      #не менять
+       'start':     6,
        'end':       6}
        ]
 PosToAxis(axes, intervals = 60)
-MainMeasure(axes)
+MainMeasure(axes, intervals = 60, axisX = 1)
+
+axes= [
+       {'name':     'APT',  #не менять
+       'number':    0,      #не менять
+       'start':     0,
+       'end':       0}, 
+       
+       {'name':     'APL',  #не менять
+       'number':    1,      #не менять
+       'start':     6,
+       'end':       6}, 
+       
+       {'name':     'APR',  #не менять
+       'number':    2,      #не менять
+       'start':     -10,
+       'end':       20}, 
+       
+       {'name':     'APB',  #не менять
+       'number':    3,      #не менять
+       'start':     6,
+       'end':       6}
+       ]
+PosToAxis(axes, intervals = 60)
+MainMeasure(axes, intervals = 60, axisX = 2)
 
 #для TH1992B - отключаем канал
 eTH1992B.ChannelsTurnOff()

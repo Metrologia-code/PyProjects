@@ -156,6 +156,7 @@ class Device():
         CommandArgument = self._NotationConverter(CommandArgument)
         #устанавливаем значение параметра
         self.tonghui.write(command.format(val=f' {CommandArgument}', **Parameters))
+        print(command.format(val=f' {CommandArgument}', **Parameters))
         time.sleep(pause)
         #конвертируем ответ прибора в число, если это число
         check = self._NotationConverter( self.GetParameter(CommandName, **Parameters) )
