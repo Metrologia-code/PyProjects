@@ -45,13 +45,16 @@ class Device():
             'DisplayPage'     : ['DISP:PAGE{val}'      ,  self.Pause   ],
             #Включение/выключение источника
             #ON|OFF
-            'SourceSwitch'    : ['FUNC:SRC{val}'       ,  self.Pause   ],
+            'SourceSwitch'    : ['FUNC:SRC{val}'       ,  self.LongPause   ],
+            # Установка напряжения
+            # значение в вольтах
+            'SourceValue'    : ['SRC:VALUE{val}'       ,  self.Pause   ],
             #Включение/выключение амперметра
             #ON|OFF
-            'AmmeterSwitch'   : ['FUNC:AMMET{val}'     ,  self.Pause   ],
+            'AmmeterSwitch'   : ['FUNC:AMMET{val}'     ,  self.LongPause   ],
             #Запуск/остановка измерения
             #RUN|STOP
-            'RunStop'         : ['FUNC:{val}'          ,  self.Pause   ],
+            'RunStop'         : ['FUNC:{val}'          ,  self.LongPause   ],
         }
 
     def _OpenResource(self, Resource, ):
@@ -183,32 +186,44 @@ class Device():
             return False
         return True
         
-    def ConfigureDevice(self, ConfigName='DEFAULT', 
+    def ConfigureDevice(self, ConfigName='SAMPLE', 
                         FilePath=None, FileName = 'Tonghui_TH2690A_config.ini', ):
         ''' универсальный метод для внешнего вызова
             во всех остальных библиотеках должен вызываться точно так же
             тогда программы смогут работать с любым прибором
             возвращает True или False '''
-        #подготавливаем настройки
+        #считываем все настройки из ini файла в переменную AllConfigs
         if not self._ProcessDeviceSettings(ConfigName, FilePath, FileName, ):
             return False
+        
+        # ЗДЕСЬ ТРЕБУЕТСЯ ПЕРЕХВАТИТЬ ОШИБКУ, ЕСЛИ ConfigName НЕ СУЩЕСТВУЕТ
         #получаем словарь настроек для выбранного пресета
         ConfigDict = self.AllConfigs[ConfigName]
+        
         #режим работы прибора
         mode = ConfigDict['Func']
         #словарь компонентов команд для SetParameter() и GetParameter()
         Parameters = {'mode': mode, }
+
+        # ЭТОТ БЛОК ТРЕБУЕТСЯ ПЕРЕПИСАТЬ
+        #Ручное включение диапазона источника напряжения
+        # 1 - -20...20V; 2 - 0...1000V; 3 - -1000...0V
+        # Данную команду не удалось включить в общий перечень, так как она принимает код, 
+        # а аналогичный запрос возвращает текстовую строку. Не проходит автоматическая проверка.
+        self.tonghui.write('SRC:RANGE 1')
+        print('SRC:RANGE 1')
+        time.sleep(self.Pause)
+        # Отключить источник от земли, так как мы вручную подключили проводами по нестандартной схеме
+        self.tonghui.write('SRC:GND FLOAT')
+        print('SRC:GND FLOAT')
+        time.sleep(self.Pause)
+
         #итерируем параметры настроек и устанавливаем их
         for CommandName, CommandArgument in ConfigDict.items():
             if not self.SetParameter(CommandName, CommandArgument, **Parameters):
                 return False
-        #в случае успешной настройки 'включаем канал'
-        '''if not self.SetParameter('DisplayPage', 'MEAS'):
-            return False
-        if not self.SetParameter('SourceSwitch', 'OFF'):
-            return False  
-        if not self.SetParameter('AmmeterSwitch', 'ON'):
-            return False'''
+                
+        # ЭТОТ БЛОК ТРЕБУЕТСЯ ПЕРЕПИСАТЬ
         #запускаем измерение
         '''time.sleep(self.MassivePause)
         if not self.SetParameter('RunStop', 'RUN', ):
@@ -218,6 +233,7 @@ class Device():
         self.tonghui.write('FUNC:RUN')
         #если не подождать, то измерение стартанет, но кнопка не загорится
         time.sleep(2)
+        
         return True
 
     def SingleMeasure(self, ):
