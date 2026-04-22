@@ -38,7 +38,7 @@ class Device():
     def Start(self, ):
         
         #Source switch 'FUNC:SRC ON|OFF'
-        self.tonghui.write('FUNC:SRC OFF')
+        self.tonghui.write('FUNC:SRC ON')
         #Ammeter switch 'FUNC:AMMET ON|OFF'
         self.tonghui.write('FUNC:AMMET ON')
         #Run/Stop measurement 'FUNC:RUN|STOP'
