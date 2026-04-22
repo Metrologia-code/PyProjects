@@ -73,14 +73,16 @@ def MainMeasure(axes, intervals, axisX = 0):
     #генерируем уникальное имя файла и добавляем путь к нему
     FilePath = SavePath + 'Baturin_Calibration_' + datetime.now().strftime("%Y-%m-%d %H-%M-%S")
 
+    
     try:
         AxesToStart(axes)
         #Время начала измерений
         start_time = time.time()
 
         with open(FilePath+'.txt', 'x') as file:
+            print(FilePath+'.txt')
             #Подготавливаем и записываем шапку в файл
-            WriteHeaderToFile(file, axes, 'APL current, A\tAPT current, A\tPhotodiode current, A')
+            WriteHeaderToFile(file, axes, 'APL current, A\tAPT current, A\tProbe current, A')
 
             for cpos in range(intervals + 1):
                 #Отправляем используемые оси в следущую точку
@@ -179,55 +181,6 @@ SavePath = CreateSavePath(LAN_Path='\\\\MetroBulk\\Public\\EXP_DATA', )
 axes= [
        {'name':     'APT',  #не менять
        'number':    0,      #не менять
-       'start':     20,
-       'end':       20}, 
-       
-       {'name':     'APL',  #не менять
-       'number':    1,      #не менять
-       'start':     20,
-       'end':       20}, 
-       
-       {'name':     'APR',  #не менять
-       'number':    2,      #не менять
-       'start':     -20,
-       'end':       20}, 
-       
-       {'name':     'APB',  #не менять
-       'number':    3,      #не менять
-       'start':     20,
-       'end':       20}
-       ]
-PosToAxis(axes, intervals = 40)
-MainMeasure(axes, intervals = 40, axisX = 2)
-
-axes= [
-       {'name':     'APT',  #не менять
-       'number':    0,      #не менять
-       'start':     20,
-       'end':       20}, 
-       
-       {'name':     'APL',  #не менять
-       'number':    1,      #не менять
-       'start':     -20,
-       'end':       20}, 
-       
-       {'name':     'APR',  #не менять
-       'number':    2,      #не менять
-       'start':     20,
-       'end':       20}, 
-       
-       {'name':     'APB',  #не менять
-       'number':    3,      #не менять
-       'start':     20,
-       'end':       20}
-       ]
-PosToAxis(axes, intervals = 40)
-MainMeasure(axes, intervals = 40, axisX = 1)
-
-
-axes= [
-       {'name':     'APT',  #не менять
-       'number':    0,      #не менять
        'start':     -20,
        'end':       20}, 
        
@@ -246,14 +199,62 @@ axes= [
        'start':     20,
        'end':       20}
        ]
-PosToAxis(axes, intervals = 40)
-MainMeasure(axes, intervals = 40, axisX = 0)
+PosToAxis(axes, intervals = 400)
+MainMeasure(axes, intervals = 400, axisX = 0)
 
 axes= [
        {'name':     'APT',  #не менять
        'number':    0,      #не менять
+       'start':     -2,
+       'end':       -2}, 
+       
+       {'name':     'APL',  #не менять
+       'number':    1,      #не менять
+       'start':     -20,
+       'end':       20}, 
+       
+       {'name':     'APR',  #не менять
+       'number':    2,      #не менять
        'start':     20,
        'end':       20}, 
+       
+       {'name':     'APB',  #не менять
+       'number':    3,      #не менять
+       'start':     20,
+       'end':       20}
+       ]
+PosToAxis(axes, intervals = 400)
+MainMeasure(axes, intervals = 400, axisX = 1)
+
+axes= [
+       {'name':     'APT',  #не менять
+       'number':    0,      #не менять
+       'start':     -2,
+       'end':       -2}, 
+       
+       {'name':     'APL',  #не менять
+       'number':    1,      #не менять
+       'start':     20,
+       'end':       20}, 
+       
+       {'name':     'APR',  #не менять
+       'number':    2,      #не менять
+       'start':     -20,
+       'end':       20}, 
+       
+       {'name':     'APB',  #не менять
+       'number':    3,      #не менять
+       'start':     20,
+       'end':       20}
+       ]
+PosToAxis(axes, intervals = 400)
+MainMeasure(axes, intervals = 400, axisX = 2)
+
+axes= [
+       {'name':     'APT',  #не менять
+       'number':    0,      #не менять
+       'start':     -2,
+       'end':       -2}, 
        
        {'name':     'APL',  #не менять
        'number':    1,      #не менять
@@ -268,11 +269,84 @@ axes= [
        {'name':     'APB',  #не менять
        'number':    3,      #не менять
        'start':     -20,
-       'end':       20},
+       'end':       20}
        ]
-PosToAxis(axes, intervals = 40)
-MainMeasure(axes, intervals = 40, axisX = 3)
+PosToAxis(axes, intervals = 400)
+MainMeasure(axes, intervals = 400, axisX = 3)
+
 '''
+axes= [
+       {'name':     'APT',  #не менять
+       'number':    0,      #не менять
+       'start':     -15,
+       'end':       15}, 
+       
+       {'name':     'APL',  #не менять
+       'number':    1,      #не менять
+       'start':     3.67,
+       'end':       3.67}, 
+       
+       {'name':     'APR',  #не менять
+       'number':    2,      #не менять
+       'start':     -3.5,
+       'end':       -3.5}, 
+       
+       {'name':     'APB',  #не менять
+       'number':    3,      #не менять
+       'start':     15.626,
+       'end':       -14.374}
+       ]
+PosToAxis(axes, intervals = 300)
+MainMeasure(axes, intervals = 300, axisX = 0)
+
+axes= [
+       {'name':     'APT',  #не менять
+       'number':    0,      #не менять
+       'start':     15,
+       'end':       -15}, 
+       
+       {'name':     'APL',  #не менять
+       'number':    1,      #не менять
+       'start':     3.67,
+       'end':       3.67}, 
+       
+       {'name':     'APR',  #не менять
+       'number':    2,      #не менять
+       'start':     -3.5,
+       'end':       -3.5}, 
+       
+       {'name':     'APB',  #не менять
+       'number':    3,      #не менять
+       'start':     -14.374,
+       'end':       15.626}
+       ]
+PosToAxis(axes, intervals = 300)
+MainMeasure(axes, intervals = 300, axisX = 0)
+
+axes= [
+       {'name':     'APT',  #не менять
+       'number':    0,      #не менять
+       'start':     -2,
+       'end':       -2}, 
+      
+       {'name':     'APL',  #не менять
+       'number':    1,      #не менять
+       'start':     -20,
+       'end':       20}, 
+       
+       {'name':     'APR',  #не менять
+       'number':    2,      #не менять
+       'start':     20,
+       'end':       20}, 
+       
+       {'name':     'APB',  #не менять
+       'number':    3,      #не менять
+       'start':     2.56,
+       'end':       2.56},
+       ]
+PosToAxis(axes, intervals = 200)
+MainMeasure(axes, intervals = 200, axisX = 1)
+
 axes= [
        {'name':     'APT',  #не менять
        'number':    0,      #не менять
@@ -350,29 +424,30 @@ MainMeasure(axes, intervals = 40, axisX = 3)
 axes= [
        {'name':     'APT',  #не менять
        'number':    0,      #не менять
-       'start':     -5,
-       'end':       -5}, 
+       'start':     -2,
+       'end':       -2}, 
        
        {'name':     'APL',  #не менять
        'number':    1,      #не менять
-       'start':     -5,
-       'end':       -5}, 
+       'start':     -2,
+       'end':       -2}, 
        
        {'name':     'APR',  #не менять
        'number':    2,      #не менять
-       'start':     -5,
-       'end':       -5}, 
+       'start':     -2,
+       'end':       -2}, 
        
        {'name':     'APB',  #не менять
        'number':    3,      #не менять
-       'start':     -5,
-       'end':       -5}
+       'start':     -2,
+       'end':       -2}
        ]
 PosToAxis(axes, intervals = 3)
 AxesToStart(axes)
 
 #для TH1992B - отключаем канал
-eTH1992B.ChannelsTurnOff()
+#eTH1992B.ChannelsTurnOff()
+
 #прерываем связь с прибором
 eTH1992B.Close()
 eTH2690A.Close()

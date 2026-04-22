@@ -19,7 +19,7 @@ set DeviceSerial=DeviceSerial:W152230156
 :: Для TH1992B - НомерКанала:ИмяПресета, получится dict
 :: Измерения будут сниматься только с указанных каналов
 :: ConfigName=ConfigName:1:TEST_VOLT,2:TEST_CURR
-set ConfigName=ConfigName:PICOAMMETER_-20V
+set ConfigName=ConfigName:FDUK_2V
 :: Желаемое время одного измерения, сек
 :: Логгер будет рассчитывать и добавлять такую паузу,
 :: чтобы время измерения получалось желаемым
@@ -28,9 +28,9 @@ set ConfigName=ConfigName:PICOAMMETER_-20V
 :: t_расч = t_одногозапроса + t_плота + aperture_прибора
 set MeasTime=MeasTime:1
 :: Количество измерений (точек) на эксперимент
-set MeasPoints=MeasPoints:61
+set MeasPoints=MeasPoints:72001
 :: Количество точек по оси х на графике
-set CanvasPoints=CanvasPoints:30
+set CanvasPoints=CanvasPoints:3600
 :: Создавать ли график
 :: TRUE, FALSE
 set EnablePlot=EnablePlot:TRUE
