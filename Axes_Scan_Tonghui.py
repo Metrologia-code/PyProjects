@@ -9,7 +9,7 @@ from Motion_control import Controller
 from User_libs import CreateSavePath
 
 def InitSpeed():
-    for ax in range(3):
+    for ax in range(4):
         acs.set_vel(ax,1)    # скорость
         acs.set_acc(ax,5)    # ускорение/торможение
         acs.set_jerk(ax,25)  # скорость изменения ускорения
@@ -54,8 +54,8 @@ def pos_to_x(axes, pos):
         return w*h
 
 #Выбор прибора 'tonghui_TH2690A' либо 'tonghui_TH1992B'
-#device_name = 'tonghui_TH2690A' #Менять строку 
-device_name = 'tonghui_TH1992B' #Менять строку 
+device_name = 'tonghui_TH2690A' #Менять строку 
+#device_name = 'tonghui_TH1992B' #Менять строку 
 exec(f'DEVICE = {device_name}.Device()')
 #адрес подключенияк к tonghui_TH1992B
 if device_name == 'tonghui_TH1992B':
@@ -99,30 +99,30 @@ t = 0.1
 
 #Настройка осей. Для каждой оси нужно установить начальное и конечное положение.
 #Если они совпадают, ось приедет туда и дальше использоваться не будет.
-axis_toX = 0
+axis_toX = 2
 axes= [
        {'name':     'APT',  #не менять
        'number':    0,      #не менять
-       'start':     -10,
-       'end':       10}, 
+       'start':     20,
+       'end':       20}, 
        
        {'name':     'APL',  #не менять
-       'number':    1,      #не менять
-       'start':     2,
-       'end':       2}, 
+       'number':    1,       #не менять
+       'start':     0,
+       'end':       0}, 
        
        {'name':     'APR',  #не менять
        'number':    2,      #не менять
-       'start':     2,
-       'end':       2}, 
+       'start':     -0.3,
+       'end':       0.3}, 
        
        {'name':     'APB',  #не менять
        'number':    3,      #не менять
-       'start':     10,
-       'end':       10}
+       'start':     20,
+       'end':       20}
        ]
 #Количество интервалов (установить требуемое значение)
-intervals = 80
+intervals = 60
 
 #Добавляем к словарям осей массивы координат и информацию об их использовании
 for ax in axes:
