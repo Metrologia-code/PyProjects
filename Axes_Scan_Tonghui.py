@@ -54,8 +54,8 @@ def pos_to_x(axes, pos):
         return w*h
 
 #Выбор прибора 'tonghui_TH2690A' либо 'tonghui_TH1992B'
-device_name = 'tonghui_TH2690A' #Менять строку 
-#device_name = 'tonghui_TH1992B' #Менять строку 
+#device_name = 'tonghui_TH2690A' #Менять строку 
+device_name = 'tonghui_TH1992B' #Менять строку 
 exec(f'DEVICE = {device_name}.Device()')
 #адрес подключенияк к tonghui_TH1992B
 if device_name == 'tonghui_TH1992B':
@@ -63,10 +63,11 @@ if device_name == 'tonghui_TH1992B':
                          'DeviceAddress':'192.168.88.11',
                          'DevicePort':'45454', }
     #для TH1992B - словарь из одного элемента (также определяет канал)
-    tonghui_preset = {'2':'APL_I', }
+    tonghui_preset = {'2':'APL_I', '1':'APL_I'}
     #Выбираем, что писать в файл и строить на графике (VOLTage, CURR, RES)
     #для TH1992B - с указанием канала, например, CURR1
     graph_data = 'CURR2'
+    save_data = ('CURR1', 'CURR2') #  ('VOLTage1', 'CURR1', 'RES1', 'VOLTage2', 'CURR2', 'RES2')
     
 #адрес подключенияк к tonghui_TH2690A
 if device_name == 'tonghui_TH2690A':
@@ -77,6 +78,7 @@ if device_name == 'tonghui_TH2690A':
     tonghui_preset = 'PICOAMMETER_TEST_1'
     #Выбираем, что писать в файл и строить на графике (VOLTage, CURR, RES)
     graph_data = 'CURR'
+    save_data = (graph_data, )  #  не менять
 
 #пробуем подключиться к tonghui
 if not DEVICE.Initialize(**ConnectionDetails):
@@ -170,7 +172,7 @@ try:
         header = 'time, s\t'
         for ax in axes:
             header += ax['name'] + ' position, mm\t'
-        header += graph_data
+        header += '\t'.join(save_data)
         file.write(header + '\n')
 
         for cpos in range(intervals + 1):
@@ -191,13 +193,14 @@ try:
             #DEVICE.SingleMeasure() возвращает словарь вида {'VOLTage':value, }
             results = DEVICE.SingleMeasure()
             result_time = time.time() - start_time
-            print(*FP, results[graph_data])
             
             #выполняем, если прибор вернул измерения
             if results:
                 #формируем строку из списка данных и записываем в файл
-                to_write = f'{result_time:.3f}\t{FP[0]:.3f}\t{FP[1]:.3f}\t{FP[2]:.3f}\t{FP[3]:.3f}\t'
-                to_write = to_write + str(results[graph_data])
+                to_write = f'{result_time:.3f}\t{FP[0]:.3f}\t{FP[1]:.3f}\t{FP[2]:.3f}\t{FP[3]:.3f}'
+                for el in save_data:
+                    to_write += f'\t{results[el]:.3e}'
+                print(to_write)
                 file.write(to_write+'\n')
             #Записываем данные в файл, добавляем к спискам для графика и перестраиваем график
             #FPosition.append(pos_to_x(axes, FP))
