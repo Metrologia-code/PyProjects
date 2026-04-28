@@ -208,7 +208,14 @@ try:
             plt.plot(FPosition, Current, color='#000066', lw=0.8, marker='o', markersize=1.5)
             plt.draw()
             plt.pause(0.01)
+            
+    #сохраняем рисунок
+    plt.savefig(FilePath + '.png', dpi=600, bbox_inches='tight')
     
+except KeyboardInterrupt:
+    print("Программа остановлена пользователем")
+
+finally:
     #для TH1992B - отключаем канал
     if 'TH1992B' in DEVICE.Name:
         DEVICE.ChannelsTurnOff()
@@ -216,11 +223,3 @@ try:
     DEVICE.Close()
     
     plt.show()
-
-except KeyboardInterrupt:
-    file.close()
-    #для TH1992B - отключаем канал
-    if 'TH1992B' in DEVICE.Name:
-        DEVICE.ChannelsTurnOff()
-    #прерываем связь с прибором
-    DEVICE.Close()
