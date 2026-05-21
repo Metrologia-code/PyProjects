@@ -1,6 +1,7 @@
 from datetime import datetime
 import time, sys
 
+import Tonghui_libs
 #пользовательские библиотеки
 from User_libs import PlotterClass, ParseLoggerArguments, CreateSavePath, FormatTime
 
@@ -31,9 +32,9 @@ ConnectNames = ['ConnectionMethod', 'DeviceAddress', 'DevicePort', 'DeviceSerial
 ConnectionDetails = {name: Arguments[name] for name in ConnectNames if name in Arguments}
 
 #библиотеки управления приборами
-from Tonghui_libs import tonghui_TH1992B, tonghui_TH2690A
+import Tonghui_libs
 #создаем объект класса из библиотеки, соответствующей заданному имени прибора
-exec(f"DEVICE = {Arguments['DeviceName']}.Device()")
+DEVICE = getattr(Tonghui_libs, Arguments['DeviceName']).Device()
 
 #пробуем подключиться к прибору
 if not DEVICE.Initialize(**ConnectionDetails):

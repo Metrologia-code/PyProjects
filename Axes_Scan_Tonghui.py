@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import time, sys
 import numpy as np
-from Tonghui_libs import tonghui_TH1992B, tonghui_TH2690A
+import Tonghui_libs
 from Motion_control import Controller
 
 #пользовательские библиотеки
@@ -54,9 +54,9 @@ def pos_to_x(axes, pos):
         return w*h
 
 #Выбор прибора 'tonghui_TH2690A' либо 'tonghui_TH1992B'
-#device_name = 'tonghui_TH2690A' #Менять строку 
-device_name = 'tonghui_TH1992B' #Менять строку 
-exec(f'DEVICE = {device_name}.Device()')
+#device_name = 'tonghui_TH2690A' #Менять строку
+device_name = 'tonghui_TH1992B' #Менять строку
+DEVICE = getattr(Tonghui_libs, device_name).Device()
 #адрес подключенияк к tonghui_TH1992B
 if device_name == 'tonghui_TH1992B':
     ConnectionDetails = {'ConnectionMethod':'TCPIP',
