@@ -176,6 +176,10 @@ try:
         file.write(header + '\n')
 
         for cpos in range(intervals + 1):
+            
+            #print(f'Начало итерации {cpos}.')
+            #t0 = time.time()
+            
             #Отправляем используемые оси в следущую точку
             for ax in axes:
                 if ax['is_used']:
@@ -188,11 +192,24 @@ try:
             for ax in axes:
                 FP.append(acs.get_fpos(ax['number']))
             
+            #t1 = time.time()
+            #print(f'Оси приехали, все готово к измерению. Затраченное время: {t1-t0}')
+            
             #Ждем, измеряем прибором Tonghui и время с начала эксперимента
             time.sleep(t)
+            
+            #print('Стартуем измерения.')
+            #t0 = time.time()
+            
             #DEVICE.SingleMeasure() возвращает словарь вида {'VOLTage':value, }
             results = DEVICE.SingleMeasure()
             result_time = time.time() - start_time
+            
+            #t1 = time.time()
+            #print(f'Измерения выполнены. Затраченное время: {t1-t0}')
+            
+            #print('Записываем в файл.')
+            #t0 = time.time()
             
             #выполняем, если прибор вернул измерения
             if results:
@@ -202,6 +219,13 @@ try:
                     to_write += f'\t{results[el]:.3e}'
                 print(to_write)
                 file.write(to_write+'\n')
+            
+            #t1 = time.time()
+            #print(f'Запись в файл закончена. Затраченное время: {t1-t0}')
+
+            #print('Строим график.')
+            #t0 = time.time()
+            
             #Записываем данные в файл, добавляем к спискам для графика и перестраиваем график
             #FPosition.append(pos_to_x(axes, FP))
             #FPosition.append(cpos)  #это будет график от номера в цикле
@@ -211,6 +235,9 @@ try:
             plt.plot(FPosition, Current, color='#000066', lw=0.8, marker='o', markersize=1.5)
             plt.draw()
             plt.pause(0.01)
+            
+            #t1 = time.time()
+            #print(f'Построение графика закончено. Затраченное время: {t1-t0}')
             
     #сохраняем рисунок
     plt.savefig(FilePath + '.png', dpi=600, bbox_inches='tight')
