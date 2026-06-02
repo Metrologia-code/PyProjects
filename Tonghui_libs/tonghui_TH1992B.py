@@ -226,17 +226,18 @@ class Device():
             return False
         return True
         
-    def ConfigureDevice(self, ConfigName={'1':'DEFAULT', '2':'DEFAULT', }, 
+    def ConfigureDevice(self, ConfigName, 
                         FilePath=None, FileName = 'Tonghui_TH1992B_config.ini', ):
         ''' универсальный метод для внешнего вызова
             во всех остальных библиотеках должен вызываться точно так же
             тогда программы смогут работать с любым прибором
-            тип данных PresetName является словарем только для Tonghui TH1992B
+            тип данных ConfigName является словарем только для Tonghui TH1992B
             возвращает True или False '''
         #эксклюзивно для источника-измерителя Tonghui TH1992B
         if not self.SetParameter('FORMAT', self.DataFormat, ):
             return False
         #подготавливаем настройки
+        ConfigName = dict(sorted(ConfigName.items(), key=lambda x: int(x[0])))
         if not self._ProcessDeviceSettings(ConfigName, FilePath, FileName, ):
             return False
         #настраиваем канал(ы)
