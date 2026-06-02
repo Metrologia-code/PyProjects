@@ -1,9 +1,27 @@
 import socket
 from struct import unpack
 import numpy as np
+import functools
+import time
+
 
 
 class Controller:
+    
+    @staticmethod
+    def timer(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            start_time = time.perf_counter() # засекаем время
+        
+            result = func(*args, **kwargs) # выполняем функцию
+        
+            end_time = time.perf_counter()   # засекаем время после
+            execution_time = end_time - start_time
+            print(f"Функция {func.__name__!r} выполнена за {execution_time:.6f} секунд.")
+        
+            return result # возвращаем результат работы функции
+        return wrapper
 
     def __init__(self, ip="192.168.88.10", port=701):
         self.ip = ip
@@ -228,7 +246,7 @@ class Controller:
         """Движение оси с номером n_axis в направлении direction"""
         msg = f"JOG {n_axis},{direction}"
         self.__request_controller(msg)
-        
+    
     def wait(self):
         ismov=True
         while (ismov==True):
