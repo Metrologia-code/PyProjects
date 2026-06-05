@@ -1,0 +1,1 @@
+python scan_test.py -d TH1992B.1 TH2690A -fs
