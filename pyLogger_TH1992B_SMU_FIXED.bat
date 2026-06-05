@@ -28,7 +28,7 @@ set ConfigName=ConfigName:1:TEST_VOLT,2:TEST_VOLT
 :: t_расч = t_одногозапроса + t_плота + aperture_прибора
 set MeasTime=MeasTime:0.5
 :: Количество измерений (точек) на эксперимент
-set MeasPoints=MeasPoints:72001
+set MeasPoints=MeasPoints:172801
 :: Количество точек по оси х на графике
 set CanvasPoints=CanvasPoints:3600
 :: Создавать ли график
@@ -37,7 +37,7 @@ set EnablePlot=EnablePlot:TRUE
 :: Имена данных, которые будут записаны в файл
 :: Для TH1992B полный набор данных с двух каналов выглядит так:
 :: VOLTage1,CURR1,RES1,VOLTage2,CURR2,RES2
-set DataNames=DataNames:VOLTage2,CURR2,RES2,VOLTage1,CURR1,RES1
+set DataNames=DataNames:CURR1,CURR2
 :: Имена данных, которые будут на графике
 :: Для TH1992B добавить номер канала -  VOLTage1,CURR1,..
 set LineNames=LineNames:CURR1,CURR2
