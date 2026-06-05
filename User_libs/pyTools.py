@@ -115,20 +115,7 @@ def FormatTime(seconds, ):
 
 #****** Парсер текстового файла со списком экспериментов для сканирования щелью
 def ParseTaskFile(task_filename, ):
-    '''Возвращает список вида:
-    [
-        {'axes' : [{'APT_beg': 10.0, 'APT_end': 10.0},
-                   {'APL_beg': -4.0, 'APL_end':  4.0},
-                   {'APR_beg': 25.0, 'APR_end': 25.0},
-                   {'APB_beg': 20.0, 'APB_end': 20.0},] ,
-         'intervals': 120,
-         'filename' : 'test_file.txt',
-        },
-        {...},
-    ]
-    Таким образом, индекс списка - это порядковый индекс эксперимента,
-    а индекс списка axes - это индекс оси щели.
-    При этом каждый эксперимент является словарем.'''
+    #
     def parse_axis_values(value_str):
         # Разбираем '-6:6' или '20' в кортеж (start, end)
         parts = value_str.split(":")
@@ -151,10 +138,10 @@ def ParseTaskFile(task_filename, ):
             #5. Парсим значения координат и формируем словарь осей
             apt, apl, apr, apb = map(parse_axis_values, parts[:4])
             axes = [
-                {'APT_beg': apt[0], 'APT_end': apt[1]},
-                {'APL_beg': apl[0], 'APL_end': apl[1]},
-                {'APR_beg': apr[0], 'APR_end': apr[1]},
-                {'APB_beg': apb[0], 'APB_end': apb[1]} ]
+                {'name': 'APT', 'number': 0, 'start': apt[0], 'end': apt[1]},
+                {'name': 'APL', 'number': 1, 'start': apl[0], 'end': apl[1]},
+                {'name': 'APR', 'number': 2, 'start': apr[0], 'end': apr[1]},
+                {'name': 'APB', 'number': 3, 'start': apb[0], 'end': apb[1]} ]
             #6. Сохраняем словарь-эксперимент в общий пул
             ALL_TASKS.append({'axes': axes, 'intervals': intervals, 'filename': filename})
     return ALL_TASKS

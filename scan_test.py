@@ -1,6 +1,13 @@
+#import matplotlib.pyplot as plt
+from datetime import datetime
+import time, sys
 import argparse
-import sys
+import numpy as np
+
+#библиотеки приборов Tonghui
 import Tonghui_libs
+#библиотеки контроллера управления ножами
+from Motion_control import Controller, InitSpeed, PrintPosition, StartMove, pos_to_x
 #пользовательские библиотеки
 from User_libs import CreateSavePath, ParseTaskFile, ReadINItoDict, ParseCommandLineDevices
 
@@ -54,3 +61,18 @@ for device_name, device_info in req_devices.items():
         
     #Сохраняем настроенный прибор в словарь активных приборов
     DEVICES[device_name] = DEVICE
+
+    
+#подключаемся к контроллеру моторов осей и устанавливаем скорости движения
+acs = Controller(ip="192.168.88.10", port=701)
+acs.connect()
+InitSpeed(acs)
+ 
+#Списки для построения графика
+FPosition = list()
+Current = list()
+
+#Задержка перед измерением после остановки осей
+t = 0.1
+
+#теперь надо открывать цикл экспериментов
