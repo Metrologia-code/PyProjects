@@ -116,8 +116,7 @@ class Device():
                 print('Очередь команд занята')
             return True
     
-    def _OpenTCPIP(self, DeviceAddress=None, DevicePort=None, **kwargs):
-#Q? зачем здесь **kwargs ? - в методе выше и ниже по цепочке вызовов оно отсутствует
+    def _OpenTCPIP(self, DeviceAddress=None, DevicePort=None, **kwargs, ):
         ''' используется в Initialize()
             возвращает True или False '''
         if not DeviceAddress or not DevicePort:
@@ -126,8 +125,7 @@ class Device():
         TCPIP = f'TCPIP0::{DeviceAddress}::{DevicePort}::SOCKET'
         return self._OpenResource(TCPIP)
 
-    def _OpenUSBTCM(self, DeviceSerial=None, **kwargs): 
-#Q? зачем здесь **kwargs ? - в методе выше и ниже по цепочке вызовов оно отсутствует
+    def _OpenUSBTCM(self, DeviceSerial=None, **kwargs, ): 
         ''' используется в Initialize()
             возвращает True или False '''
         if not DeviceSerial:
@@ -202,7 +200,7 @@ class Device():
             print(f'(Считанное значение: {check})')
         return check == CommandArgument
 
-    def _ProcessDeviceSettings(self, ConfigName, FilePath, FileName, ):
+    def _ProcessDeviceSettings(self, ConfigName, FastStart, FilePath, FileName, ):
         ''' внутренний метод, используется в ConfigureDevice()
             парсим полученные извне аргументы и считываем конфигурационный файл
             для Tonghui TH1992B аргумент ConfigName также задает, с какими каналами будем работать
@@ -216,17 +214,18 @@ class Device():
         self.DataNames = [f'{name}{ch}' for ch in self.ChannelsList for name in self.DataFormat.split(',')]
         #формируем строку из списка каналов для аргумента команлы MEASure?
         self.ChannelsString = ','.join(self.ChannelsList)
-        #считываем файл с пресетами
-        self.AllConfigs = configparser.ConfigParser()
-        self.AllConfigs.optionxform = str
-        #дефолтный или заданный путь к конфигурационному файлу
-        FilePath = FilePath or os.path.dirname(os.path.abspath(__file__)) + '\\config\\'
-        if not self.AllConfigs.read(FilePath + FileName):
-            print(f'Не удалось считать файл: {FilePath + FileName}')
-            return False
+        #считываем файл с пресетами, если не указан fast start 
+        if not FastStart:
+            self.AllConfigs = configparser.ConfigParser()
+            self.AllConfigs.optionxform = str
+            #дефолтный или заданный путь к конфигурационному файлу
+            FilePath = FilePath or os.path.dirname(os.path.abspath(__file__)) + '\\config\\'
+            if not self.AllConfigs.read(FilePath + FileName):
+                print(f'Не удалось считать файл: {FilePath + FileName}')
+                return False
         return True
         
-    def ConfigureDevice(self, ConfigName, 
+    def ConfigureDevice(self, ConfigName, FastStart=False, 
                         FilePath=None, FileName = 'Tonghui_TH1992B_config.ini', ):
         ''' универсальный метод для внешнего вызова
             во всех остальных библиотеках должен вызываться точно так же
@@ -239,32 +238,33 @@ class Device():
         #сортируем каналы в словаре конфигуракий по номеру канала
         ConfigName = dict(sorted(ConfigName.items(), key=lambda x: int(x[0])))
         #подготавливаем настройки
-        if not self._ProcessDeviceSettings(ConfigName, FilePath, FileName, ):
+        if not self._ProcessDeviceSettings(ConfigName, FastStart, FilePath, FileName, ):
             return False
-        #настраиваем канал(ы)
-        for ch in self.ChannelsList:
-            #получаем словарь настроек, предназначенных для канала
-            ConfigDict = self.AllConfigs[ConfigName[ch]]
-            #режимы работы прибора
-            mode = ConfigDict['Mode']
-            sens = 'CURR' if mode == 'VOLT' else 'VOLT'
-            #словарь компонентов команд для SetParameter() и GetParameter()
-            Parameters = {'ch':ch, 'mode':mode, 'sens':sens}
-            #проверяем, выключен ли канал. если включен - выключаем
-            state = self.GetParameter('ChannelState', ch=ch)
-            if not state:
-                return False
-            elif state == '1':
-                if not self.SetParameter('ChannelState', '0', ch=ch):
-                    print('Не удалось выключить канал перед настройкой')
+        #настраиваем канал(ы), если не указан fast start
+        if not FastStart:
+            for ch in self.ChannelsList:
+                #получаем словарь настроек, предназначенных для канала
+                ConfigDict = self.AllConfigs[ConfigName[ch]]
+                #режимы работы прибора
+                mode = ConfigDict['Mode']
+                sens = 'CURR' if mode == 'VOLT' else 'VOLT'
+                #словарь компонентов команд для SetParameter() и GetParameter()
+                Parameters = {'ch':ch, 'mode':mode, 'sens':sens}
+                #проверяем, выключен ли канал. если включен - выключаем
+                state = self.GetParameter('ChannelState', ch=ch)
+                if not state:
                     return False
-            #итерируем параметры настроек и устанавливаем их
-            for CommandName, CommandArgument in ConfigDict.items():
-                if not self.SetParameter(CommandName, CommandArgument, **Parameters):
+                elif state == '1':
+                    if not self.SetParameter('ChannelState', '0', ch=ch):
+                        print('Не удалось выключить канал перед настройкой')
+                        return False
+                #итерируем параметры настроек и устанавливаем их
+                for CommandName, CommandArgument in ConfigDict.items():
+                    if not self.SetParameter(CommandName, CommandArgument, **Parameters):
+                        return False
+                #в случае успешной настройки включаем канал(ы)
+                if not self.SetParameter('ChannelState', '1', ch=ch):
                     return False
-            #в случае успешной настройки включаем канал(ы)
-            if not self.SetParameter('ChannelState', '1', ch=ch):
-                return False
         return True
 
     def _ReEnableChannels(self, ):

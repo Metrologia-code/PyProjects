@@ -202,7 +202,7 @@ def ParseCommandLineDevices(raw_devices_list, devices_pool):
         #Если прибор встречается впервые, инициализируем его структуру
         if device_name not in requested_devices:
             requested_devices[device_name] = {
-                'LibraryName': devices_pool[device_name]['libraryname'], #Марка прибора из INI
+                'LibraryName': devices_pool[device_name]['LibraryName'], #Марка прибора из INI
                 'Config': {} if channel_num else None,
             }
 
