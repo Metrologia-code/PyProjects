@@ -1,5 +1,6 @@
 from datetime import datetime
-import os
+import os, sys
+import configparser
 
 class Transformation():
 
@@ -111,4 +112,118 @@ def FormatTime(seconds, ):
     h, m = divmod(m, 60)
     return f"{h:02d} час {m:02d} мин {s:02d} сек" if h else f"{m:02d} мин {s:02d} сек" if m else f"{s:02d} сек"
 
+
+#****** Парсер текстового файла со списком экспериментов для сканирования щелью
+def ParseTaskFile(task_filename, ):
+    '''Возвращает список вида:
+    [
+        {'axes' : [{'APT_beg': 10.0, 'APT_end': 10.0},
+                   {'APL_beg': -4.0, 'APL_end':  4.0},
+                   {'APR_beg': 25.0, 'APR_end': 25.0},
+                   {'APB_beg': 20.0, 'APB_end': 20.0},] ,
+         'intervals': 120,
+         'filename' : 'test_file.txt',
+        },
+        {...},
+    ]
+    Таким образом, индекс списка - это порядковый индекс эксперимента,
+    а индекс списка axes - это индекс оси щели.
+    При этом каждый эксперимент является словарем.'''
+    def parse_axis_values(value_str):
+        # Разбираем '-6:6' или '20' в кортеж (start, end)
+        parts = value_str.split(":")
+        start, end = parts if len(parts) > 1 else parts * 2
+        return float(start), float(end)
+    #---ПАРСИНГ ТЕКСТОВОГО ФАЙЛА---
+    ALL_TASKS = []
+    with open(task_filename, "r", encoding="utf-8") as file:
+        for line in file:
+            #1. Отрезаем комментарий, убираем пробелы по краям и режем по табуляции
+            parts = line.split('#')[0].strip().split('\t')
+            #2. Пропускаем строку, если она пустая
+            if parts == ['']: continue
+            '''а вот как можно было одной строкой
+            if (parts := line.split('#')[0].strip().split('\t')) == ['']: continue'''
+            #3. Заполняем intervals (всегда 5-й элемент по счету)
+            intervals = int(parts[4])
+            #4. Проверяем имя файла (6-й элемент по счету). Если его нет — оставляем пустым
+            filename = (parts[5:] or [""])[0].strip()
+            #5. Парсим значения координат и формируем словарь осей
+            apt, apl, apr, apb = map(parse_axis_values, parts[:4])
+            axes = [
+                {'APT_beg': apt[0], 'APT_end': apt[1]},
+                {'APL_beg': apl[0], 'APL_end': apl[1]},
+                {'APR_beg': apr[0], 'APR_end': apr[1]},
+                {'APB_beg': apb[0], 'APB_end': apb[1]} ]
+            #6. Сохраняем словарь-эксперимент в общий пул
+            ALL_TASKS.append({'axes': axes, 'intervals': intervals, 'filename': filename})
+    return ALL_TASKS
+
+
+#****** Универсальный парсер INI-файла в Python-словарь
+def ReadINItoDict(folder_name, config_filename):
+    #Путь к конфигу в указанной папке
+    config_path = os.path.join(folder_name, config_filename)
+    
+    config = configparser.ConfigParser()
+    config.read(config_path, encoding='utf-8')
+    #Считываем все секции и их параметры
+    all_sections_dict = {name: dict(config[name]) for name in config.sections()}
+
+    return all_sections_dict
+
+
+#****** Парсер аргумента --devises
+def ParseCommandLineDevices(raw_devices_list, devices_pool):
+    #Словарь, где соберем имя прибора, модель, канал (если есть) и конфиг
+    requested_devices = {}
+
+    for item in raw_devices_list:
+        #1. Разделяем имя прибора (с возможным каналом) и его конфиг по двоеточию
+        if ':' in item:
+            device_part, config_name = item.split(':', 1)
+            config_name = config_name.strip()
+        else:
+            device_part, config_name = item, None
+            
+        #2. Проверяем, указан ли конкретный канал через точку (например, "TH1992B_1.2")
+        if '.' in device_part:
+            device_name, channel_num = device_part.split('.', 1)
+        else:
+            device_name, channel_num = device_part, None
+            
+        #Проверяем наличие базового имени прибора в переданном словаре devices_pool
+        if device_name not in devices_pool:
+            print(f"\n[ОШИБКА]: Прибор '{device_name}' не найден в Instrument.ini!")
+            sys.exit(1)
+            
+        #Если прибор встречается впервые, инициализируем его структуру
+        if device_name not in requested_devices:
+            requested_devices[device_name] = {
+                'LibraryName': devices_pool[device_name]['libraryname'], #Марка прибора из INI
+                'Config': {} if channel_num else None,
+            }
+
+        #ОБЩИЙ БЛОК ПРОВЕРКИ ОШИБОК ВВОДА
+        is_already_dict = isinstance(requested_devices[device_name]['Config'], dict)
         
+        #1. Проверяем смешивание одноканального и многоканального режимов
+        if (channel_num is not None) != is_already_dict:
+            print(f"\n[ОШИБКА]: Прибор '{device_name}' не может одновременно настраиваться как одноканальный и многоканальный!")
+            sys.exit(1)
+        #2. Проверяем повторный ввод канала для многоканального прибора
+        elif is_already_dict and channel_num in requested_devices[device_name]['Config']:
+            print(f"\n[ОШИБКА]: Канал {channel_num} для прибора '{device_name}' указан несколько раз!")
+            sys.exit(1)
+        #3. Проверяем повторный ввод для одноканального прибора
+        elif not is_already_dict and requested_devices[device_name]['Config'] is not None:
+            print(f"\n[ОШИБКА]: Прибор '{device_name}' указан в аргументах несколько раз!")
+            sys.exit(1)
+
+        #Запись имен конфигураций (если были заданы)
+        if channel_num:
+            requested_devices[device_name]['Config'][channel_num] = config_name
+        else:
+            requested_devices[device_name]['Config'] = config_name
+                
+    return requested_devices

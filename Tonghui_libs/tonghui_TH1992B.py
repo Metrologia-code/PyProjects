@@ -236,8 +236,9 @@ class Device():
         #эксклюзивно для источника-измерителя Tonghui TH1992B
         if not self.SetParameter('FORMAT', self.DataFormat, ):
             return False
-        #подготавливаем настройки
+        #сортируем каналы в словаре конфигуракий по номеру канала
         ConfigName = dict(sorted(ConfigName.items(), key=lambda x: int(x[0])))
+        #подготавливаем настройки
         if not self._ProcessDeviceSettings(ConfigName, FilePath, FileName, ):
             return False
         #настраиваем канал(ы)
