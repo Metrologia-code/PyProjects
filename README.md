@@ -35,6 +35,7 @@
 ├── pyLogger.py                                 # Универсальный логгер
 ├── pyRetriever.py                              # ВАХ-метр
 ├── daily-Alexei.sh                             # Скрипт для работы с git
+├── daily-Luparev.sh                            # Скрипт для работы с git
 ├── ~.bat                                       # Исполняемые файлы для запуска .py (с параметрами)
 ├── .gitignore                                  # Игнорируемые файлы git
 ├── Git-guide.txt                               # Инструкция для работы с git

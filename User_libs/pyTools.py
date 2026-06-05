@@ -166,6 +166,8 @@ def ReadINItoDict(folder_name, config_filename):
     config_path = os.path.join(folder_name, config_filename)
     
     config = configparser.ConfigParser()
+    #Сохраняем оригинальный регистр букв (CamelCase) из INI-файла
+    config.optionxform = str
     config.read(config_path, encoding='utf-8')
     #Считываем все секции и их параметры
     all_sections_dict = {name: dict(config[name]) for name in config.sections()}

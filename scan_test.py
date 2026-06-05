@@ -1,4 +1,6 @@
 import argparse
+import sys
+import Tonghui_libs
 #пользовательские библиотеки
 from User_libs import CreateSavePath, ParseTaskFile, ReadINItoDict, ParseCommandLineDevices
 
@@ -28,6 +30,27 @@ args = arg_parser.parse_args()
 devices_pool = ReadINItoDict('INI', 'Instrument.ini')
 
 #2. Передаем список из консоли и считанный словарь приборов в функцию разбора
-current_devices_config = ParseCommandLineDevices(args.devices, devices_pool)
+req_devices = ParseCommandLineDevices(args.devices, devices_pool)
 
-print(current_devices_config)
+#---ИНИЦИАЛИЗАЦИЯ И НАСТРОЙКА ПРИБОРОВ---
+#Словарь для хранения объектов подключенных приборов
+DEVICES = {}
+
+for device_name, device_info in req_devices.items():
+    lib_name = device_info['LibraryName']
+    
+    DEVICE = getattr(Tonghui_libs, lib_name).Device()
+    
+    #Берем параметры подключения из INI
+    connection_details = devices_pool[device_name].copy()
+    
+    if not DEVICE.Initialize(**connection_details):
+        sys.exit(1)
+        
+    #Вызываем конфигурацию всегда, передавая имя пресета и флаг быстрого запуска
+    device_config = device_info['Config']
+    if not DEVICE.ConfigureDevice(ConfigName=device_config, FastStart=args.faststart):
+        sys.exit(1)
+        
+    #Сохраняем настроенный прибор в словарь активных приборов
+    DEVICES[device_name] = DEVICE
