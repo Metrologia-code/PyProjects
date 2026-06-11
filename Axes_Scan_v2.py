@@ -142,8 +142,8 @@ fig = plt.figure(1, figsize=(8, 6))
 fig.clf()
 
 #генератор пути к папке, в которую будут сохраняться данные
-#ВНИМАНИЕ! если путь не существует, то запись будет вестись в местную директорию Data
-#SavePath = CreateSavePath(__file__, LAN_Path='\\\\MetroBulk\\Public\\EXP_DATA')
+#ВНИМАНИЕ!
+#Eсли путь не существует, то запись будет вестись в местную директорию Data
 SavePath = CreateSavePath(LAN_Path='\\\\MetroBulk\\Public\\EXP_DATA', )
 #генерируем уникальное имя файла и добавляем путь к нему
 FilePath = SavePath + DEVICE.Name + ' ' + datetime.now().strftime("%Y-%m-%d %H-%M-%S") + '_axes_scan'

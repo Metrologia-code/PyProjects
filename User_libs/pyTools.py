@@ -67,15 +67,10 @@ def CreateDirIfNot(dirpath):
         pass
 
 def CreateSavePath(LAN_Path=None, ):
-    ''' file - путь к файлу, который вызвал функцию 
-        LAN_Path - путь к файловому хранилищу
+    ''' LAN_Path - путь к файловому хранилищу
         формирует путь к папке для сохранения данных
         и создает в ней подпапку с текущей датой
         возвращает путь в виде строки '''
-    '''try:
-        ProgramPath = os.path.dirname(os.path.abspath(file))
-    except NameError:
-        ProgramPath = os.getcwd()'''
     ProgramPath = os.getcwd()
     TodayNameDir = '\\' + datetime.now().strftime("%Y_%m_%d") + '\\'
     #сохраняем в хранилище MetroBulk, если оно доступно
@@ -142,6 +137,10 @@ def ParseTaskFile(task_filename, ):
                 {'name': 'APL', 'number': 1, 'start': apl[0], 'end': apl[1]},
                 {'name': 'APR', 'number': 2, 'start': apr[0], 'end': apr[1]},
                 {'name': 'APB', 'number': 3, 'start': apb[0], 'end': apb[1]} ]
+            #Добавляем к словарям осей массивы координат и информацию об их использовании
+            for ax in axes:
+                ax['pos'] = np.linspace(ax['start'], ax['end'], intervals + 1)
+                ax['is_used'] = (ax['start'] != ax['end'])
             #6. Сохраняем словарь-эксперимент в общий пул
             ALL_TASKS.append({'axes': axes, 'intervals': intervals, 'filename': filename})
     return ALL_TASKS
