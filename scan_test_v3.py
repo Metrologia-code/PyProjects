@@ -102,6 +102,7 @@ SavePath = CreateSavePath(LAN_Path='\\\\MetroBulk\\Public\\EXP_DATA', )
 device_data_keys = {}
 for device_name, device_obj in DEVICES.items():
     probe_measure = device_obj.SingleMeasure()
+    print(f'Пробное измерение:\n{probe_measure}')
     device_data_keys[device_name] = list(probe_measure.keys())
 
 #---ОСНОВНОЙ ЦИКЛ ЗАПУСКА ЭКСПЕРИМЕНТОВ---

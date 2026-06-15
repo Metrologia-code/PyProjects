@@ -1,6 +1,7 @@
 from datetime import datetime
 import os, sys
 import configparser
+import numpy as np
 
 class Transformation():
 
@@ -141,6 +142,9 @@ def ParseTaskFile(task_filename, ):
             for ax in axes:
                 ax['pos'] = np.linspace(ax['start'], ax['end'], intervals + 1)
                 ax['is_used'] = (ax['start'] != ax['end'])
+                #start, end = ax['start'], ax['end']
+                #ax['pos'] = [start + i * (end - start) / intervals for i in range(intervals + 1)]
+                #ax['is_used'] = (start != end)
             #6. Сохраняем словарь-эксперимент в общий пул
             ALL_TASKS.append({'axes': axes, 'intervals': intervals, 'filename': filename})
     return ALL_TASKS
