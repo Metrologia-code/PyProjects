@@ -1,3 +1,36 @@
-python scan_test.py -d TH1992B_1.1 TH2690A_1 -fs
+python scan_test_v3.py -d TH1992B_1.1 TH2690A_1 -fs
 python scan_test_v3.py -d TH1992B_1.1 -fs
 python scan_test_v3.py -d TH1992B_1.1:TEST_VOLT -fs
+
+python scan_test_v3.py -d TH1992B_1.1 TH2690A_1 -fs -tf Axes_test_task_01.txt
+python scan_test_v3.py -d TH1992B_1.1 TH1992B_1.2 TH2690A_1 -fs -tf Axes_test_task_01.txt
+
+python scan_test_v3.py -d TH2690A_1:PICOAMMETER_TEST_1 -tf Axes_test_task_01.txt
+
+1. Если запустить запись в файл с существующем именем - он перезапишется
+2. Если запустить программу с быстрым стартом, а канал/режим измерения на приборе не включен,
+    то пробное измерение не выполнится. Добавить перехватчик ошибки пробного измерения
+    Точнее не так. Канал будет включен, но первый запуск на пробноем измерении почему-то возвращает False
+    Точнее все так, канал включается, измерение считается проваленным и возвращает False, но программа идет дальше
+    При этом пикоамперметр возвращает значения даже при выключенном измерении
+    Настройка пикоамперметра на включает кнопку ammeter
+
+Z:\!Programs\!Metrologia_git>python scan_test_v3.py -d TH1992B_1.1 TH2690A_1 -fs
+{'TH1992B_1': {'LibraryName': 'tonghui_TH1992B', 'Config': {'1': None}}, 'TH2690A_1': {'LibraryName': 'tonghui_TH2690A', 'Config': None}}
+Tonghui,TH1992B,Ver 1.6.7 - подключено к TCPIP0::192.168.88.11::45454::SOCKET
+:FORM:ELEM:SENS VOLTage,CURR,RES
+TH2690A,V1.0.13,R10B230127 - подключено к TCPIP0::192.168.88.12::45454::SOCKET
+2026-06-16 13-15-45 Измерить не удалось, канал 1 отключен!
+:OUTP1:STAT 1
+Канал 1 удалось включить
+Пробное измерение:
+False
+Traceback (most recent call last):
+  File "Z:\!Programs\!Metrologia_git\scan_test_v3.py", line 106, in <module>
+    device_data_keys[device_name] = list(probe_measure.keys())
+                                         ^^^^^^^^^^^^^^^^^^
+AttributeError: 'bool' object has no attribute 'keys'
+
+3. Добавить сообщение о том, что ножи поехали в стартовое положение
+4. Добавить вывод используемых приборов и их конфигураций в человеческом виде в начало программы
+5. Перехватить ошибку в случае запуска без флага -fs и без указанных конфигураций
