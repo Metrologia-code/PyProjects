@@ -4,6 +4,7 @@ import time, sys, os
 import argparse
 import numpy as np
 from itertools import count
+import threading
 
 #библиотеки приборов Tonghui
 import Tonghui_libs
@@ -22,6 +23,22 @@ def get_experiment_file_info(task_filename, save_path):
 		filename = next(f"{base_name}({n})" for n in count(1) if not os.path.exists(save_path + f"{base_name}({n}).txt"))
 		
 	return save_path + filename + ".txt"
+
+#принимает объект контроллера, список осей и индекс текущей точки сканирования, перемещает ножи и ждет остановки
+def move_axes_to_position(acs, axes, cpos):
+	for ax in axes:
+		if ax['is_used']:
+			acs.ptp(ax['number'], ax['pos'][cpos])
+	time.sleep(0.01)
+	acs.wait()
+
+#принимает словарь ключей приборов, возвращает шапку
+def build_file_header(data_keys):
+	header = 'time, s\tAPT pos, mm\tAPL pos, mm\tAPR pos, mm\tAPB pos, mm'
+	for device_name, keys in data_keys.items():
+		for key in keys:
+			header += f'\t{device_name}.{key}'
+	return header
 
 #---БЛОК РАЗБОРА АРГУМЕНТОВ КОМАНДНОЙ СТРОКИ---
 arg_parser = argparse.ArgumentParser(
@@ -53,9 +70,13 @@ arg_parser.add_argument('-g', '--graph', action='store_true',
 arg_parser.add_argument('-sf', '--singlefile', action='store_true',
 						help="Сохранять результаты всех экспериментов в один файл.")
 
+#Параметр для задания фиксированного периода шага измерения в секундах
+arg_parser.add_argument('-p', '--period', type=float, default=1.0,
+						help="Период одного шага измерения в секундах. По умолчанию: 1.0 с.")
+
 args = arg_parser.parse_args()
 
-#---ФИЛЬТРАЦИЯ И АВТОМАТИЧЕСКОЕ СКЛЕЕМЫЕ КАНАЛОВ---
+#---ФИЛЬТРАЦИЯ И АВТОМАТИЧЕСКОЕ СКЛЕИВАНИЕ КАНАЛОВ---
 #1. Считываем все доступные приборы в теле программы
 devices_pool = ReadINItoDict('INI', 'Instrument.ini')
 
@@ -138,58 +159,64 @@ for task_index in tasks_to_run:
 			
 			#Подготавливаем и записываем шапку в файл (только если файл открыт в режиме перезаписи)
 			if file_mode == 'w':
-				header = 'time, s\tAPT pos, mm\tAPL pos, mm\tAPR pos, mm\tAPB pos, mm'
-				
-				#Динамически формируем колонки на основе реальных ключей из SingleMeasure
-				for device_name, keys in device_data_keys.items():
-					for key in keys:
-						header += f'\t{device_name}.{key}'
-						
-				file.write(header + '\n')
+				file.write(build_file_header(device_data_keys) + '\n')
 
-			#---ОСНОВНОЙ ЦИКЛ СКАНИРОВАНИЯ ПО КООРДИНАТАМ ЗАДАНИЯ---
-			intervals = task['intervals']
-			axes = task['axes']
-			
-			for cpos in range(intervals + 1):
+			#---ОСНОВНОЙ ЦИКЛ СКАНИРОВАНИЯ ПО КООРДИНАТАМ ЗАДАНИЯ---		
+			for cpos in range(task['intervals'] + 1):
 				#Отправляем используемые оси в следущую точку
-				for ax in axes:
-					if ax['is_used']:
-						acs.ptp(ax['number'], ax['pos'][cpos])
-				
-				#Ожидаем окончания движения всех осей
-				time.sleep(0.01)
-				acs.wait()
+				move_axes_to_position(acs, task['axes'], cpos)
 
 				#Опрашиваем положение всех осей
-				FP = [acs.get_fpos(ax['number']) for ax in axes]
+				FP = [acs.get_fpos(ax['number']) for ax in task['axes']]
 				
-				#Стабилизационная задержка перед измерением
-				time.sleep(t)
+				#Фиксируем высокоточную стартовую метку времени измерения
+				t_measure_start = time.perf_counter()
+				
+				thread_results = {}
+				threads = []
+				
+				#Вспомогательная функция-воркер для параллельного опроса приборов
+				def worker(d_name, d_obj):
+					thread_results[d_name] = d_obj.SingleMeasure()
+				
+				#Создаем и запускаем поток для каждого подключенного прибора
+				for device_name, device_obj in DEVICES.items():
+					t_thread = threading.Thread(target=worker, args=(device_name, device_obj))
+					threads.append(t_thread)
+					t_thread.start()
+				
+				#Ждем завершения опроса абсолютно всех приборов
+				for thread in threads:
+					thread.join()
+				
+				#Вычисляем время с начала эксперимента
+				measurement_time = time.time() - start_time
 				
 				#Последовательно опрашиваем все приборы и собираем данные
-				measurement_time = time.time() - start_time
 				device_results_line = ""
-				measurement_failed = False
 				
-				for device_name, device_obj in DEVICES.items():
-					results = device_obj.SingleMeasure()
+				for device_name in DEVICES.keys():
+					results = thread_results.get(device_name)
 					
-					#выполняем, если прибор вернул измерения, иначе прерываем шаг
-					if results:
-						device_results_line += "".join(f"\t{val:.3e}" for val in results.values())
-					else:
-						measurement_failed = True
-						break
-
-				#Если хотя бы один прибор сбоит — пропускаем запись этой точки
-				if measurement_failed:
-					continue
+					#Вытаскиваем значения по ключам. Если прибор вернул False — пишем NaN
+					for key in device_data_keys[device_name]:
+						val = results.get(key) if results else float('nan')
+						device_results_line += f'\t{val:.3e}'
 
 				#Формируем финальную строку и записываем в файл
-				to_write = f'{measurement_time:.3f}\t{FP:.3f}\t{FP:.3f}\t{FP:.3f}\t{FP:.3f}' + device_results_line
+				to_write = f'{measurement_time:.3f}\t{FP[0]:.3f}\t{FP[1]:.3f}\t{FP[2]:.3f}\t{FP[3]:.3f}' + device_results_line
 				print(to_write)
 				file.write(to_write + '\n')
+				
+				#Вычисляем фактически затраченное время на опрос и расчеты
+				t_fact = time.perf_counter() - t_measure_start
+				t_sleep = args.period - t_fact
+				
+				#Удерживаем жесткую временную сетку шага измерения
+				if t_sleep > 0:
+					time.sleep(t_sleep)
+				else:
+					print(f"[WARNING] Итерация {cpos} не уложилась в период! Затрачено: {t_fact:.3f} с из {args.period} с.")
 
 	except KeyboardInterrupt:
 		print("Программа остановлена пользователем")
