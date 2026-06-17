@@ -200,75 +200,75 @@ class Device():
             print(f'(Считанное значение: {check})')
         return check == CommandArgument
 
-	def _ProcessDeviceSettings(self, ConfigName, FilePath, FileName, ):
-		''' внутренний метод, используется в ConfigureDevice()
-			парсим полученные извне аргументы и считываем конфигурационный файл
-			для Tonghui TH1992B аргумент ConfigName также задает, с какими каналами будем работать
-			поэтому метод SingleMeasure() не будет работать, если вызвать его до _ProcessDeviceSettings()
-			вообще это не есть хорошо, но пока так
-			возвращает True или False '''
-		#список используемых каналов (исключаем каналы со значением None)
-		#эксклюзивно для источника-измерителя Tonghui TH1992B
-		self.ChannelsList = [ch for ch, preset in ConfigName.items() if preset is not None]
-		#формируем список имен измеряемых величин в соответствии с каналами измерения
-		self.DataNames = [f'{name}{ch}' for ch in self.ChannelsList for name in self.DataFormat.split(',')]
-		#формируем строку из списка каналов для аргумента команлы MEASure?
-		self.ChannelsString = ','.join(self.ChannelsList)
-		#считываем файл с пресетами, если хотя бы один канал требует загрузки конфигурации (не FastStart)
-		if any(preset != "FastStart" for preset in ConfigName.values() if preset is not None):
-			self.AllConfigs = configparser.ConfigParser()
-			self.AllConfigs.optionxform = str
-			#дефолтный или заданный путь к конфигурационному файлу
-			FilePath = FilePath or os.path.dirname(os.path.abspath(__file__)) + '\\config\\'
-			if not self.AllConfigs.read(FilePath + FileName):
-				print(f'Не удалось считать файл: {FilePath + FileName}')
-				return False
-		return True
-		
-	def ConfigureDevice(self, ConfigName, 
-						FilePath=None, FileName = 'Tonghui_TH1992B_config.ini', ):
-		''' универсальный метод для внешнего вызова
-			во всех остальных библиотеках должен вызываться точно так же
-			тогда программы смогут работать с любым прибором
-			тип данных ConfigName является словарем только для Tonghui TH1992B
-			возвращает True или False '''
-		#эксклюзивно для источника-измерителя Tonghui TH1992B
-		if not self.SetParameter('FORMAT', self.DataFormat, ):
-			return False
-		#сортируем каналы в словаре конфигуракий по номеру канала
-		ConfigName = dict(sorted(ConfigName.items(), key=lambda x: int(x[0])))
-		#подготавливаем настройки
-		if not self._ProcessDeviceSettings(ConfigName, FilePath, FileName, ):
-			return False
-		#настраиваем каждый канал индивидуально в зависимости от его значения
-		for ch in self.ChannelsList:
-			#Если для канала явно указан режим FastStart — пропускаем его физическую настройку
-			if ConfigName[ch] == "FastStart":
-				continue
-				
-			#получаем словарь настроек, предназначенных для канала
-			ConfigDict = self.AllConfigs[ConfigName[ch]]
-			#режимы работы прибора
-			mode = ConfigDict['Mode']
-			sens = 'CURR' if mode == 'VOLT' else 'VOLT'
-			#словарь компонентов команд для SetParameter() и GetParameter()
-			Parameters = {'ch':ch, 'mode':mode, 'sens':sens}
-			#проверяем, выключен ли канал. если включен - выключаем
-			state = self.GetParameter('ChannelState', ch=ch)
-			if not state:
-				return False
-			elif state == '1':
-				if not self.SetParameter('ChannelState', '0', ch=ch):
-					print('Не удалось выключить канал перед настройкой')
-					return False
-			#итерируем параметры настроек и устанавливаем их
-			for CommandName, CommandArgument in ConfigDict.items():
-				if not self.SetParameter(CommandName, CommandArgument, **Parameters):
-					return False
-			#в случае успешной настройки включаем канал(ы)
-			if not self.SetParameter('ChannelState', '1', ch=ch):
-				return False
-		return True
+    def _ProcessDeviceSettings(self, ConfigName, FilePath, FileName, ):
+        ''' внутренний метод, используется в ConfigureDevice()
+            парсим полученные извне аргументы и считываем конфигурационный файл
+            для Tonghui TH1992B аргумент ConfigName также задает, с какими каналами будем работать
+            поэтому метод SingleMeasure() не будет работать, если вызвать его до _ProcessDeviceSettings()
+            вообще это не есть хорошо, но пока так
+            возвращает True или False '''
+        #список используемых каналов (исключаем каналы со значением None)
+        #эксклюзивно для источника-измерителя Tonghui TH1992B
+        self.ChannelsList = [ch for ch, preset in ConfigName.items() if preset is not None]
+        #формируем список имен измеряемых величин в соответствии с каналами измерения
+        self.DataNames = [f'{name}{ch}' for ch in self.ChannelsList for name in self.DataFormat.split(',')]
+        #формируем строку из списка каналов для аргумента команлы MEASure?
+        self.ChannelsString = ','.join(self.ChannelsList)
+        #считываем файл с пресетами, если хотя бы один канал требует загрузки конфигурации (не FastStart)
+        if any(preset != "FastStart" for preset in ConfigName.values() if preset is not None):
+            self.AllConfigs = configparser.ConfigParser()
+            self.AllConfigs.optionxform = str
+            #дефолтный или заданный путь к конфигурационному файлу
+            FilePath = FilePath or os.path.dirname(os.path.abspath(__file__)) + '\\config\\'
+            if not self.AllConfigs.read(FilePath + FileName):
+                print(f'Не удалось считать файл: {FilePath + FileName}')
+                return False
+        return True
+        
+    def ConfigureDevice(self, ConfigName, 
+                        FilePath=None, FileName = 'Tonghui_TH1992B_config.ini', ):
+        ''' универсальный метод для внешнего вызова
+            во всех остальных библиотеках должен вызываться точно так же
+            тогда программы смогут работать с любым прибором
+            тип данных ConfigName является словарем только для Tonghui TH1992B
+            возвращает True или False '''
+        #эксклюзивно для источника-измерителя Tonghui TH1992B
+        if not self.SetParameter('FORMAT', self.DataFormat, ):
+            return False
+        #сортируем каналы в словаре конфигуракий по номеру канала
+        ConfigName = dict(sorted(ConfigName.items(), key=lambda x: int(x[0])))
+        #подготавливаем настройки
+        if not self._ProcessDeviceSettings(ConfigName, FilePath, FileName, ):
+            return False
+        #настраиваем каждый канал индивидуально в зависимости от его значения
+        for ch in self.ChannelsList:
+            #Если для канала явно указан режим FastStart — пропускаем его физическую настройку
+            if ConfigName[ch] == "FastStart":
+                continue
+                
+            #получаем словарь настроек, предназначенных для канала
+            ConfigDict = self.AllConfigs[ConfigName[ch]]
+            #режимы работы прибора
+            mode = ConfigDict['Mode']
+            sens = 'CURR' if mode == 'VOLT' else 'VOLT'
+            #словарь компонентов команд для SetParameter() и GetParameter()
+            Parameters = {'ch':ch, 'mode':mode, 'sens':sens}
+            #proверяем, выключен ли канал. если включен - выключаем
+            state = self.GetParameter('ChannelState', ch=ch)
+            if not state:
+                return False
+            elif state == '1':
+                if not self.SetParameter('ChannelState', '0', ch=ch):
+                    print('Не удалось выключить канал перед настройкой')
+                    return False
+            #итерируем параметры настроек и устанавливаем их
+            for CommandName, CommandArgument in ConfigDict.items():
+                if not self.SetParameter(CommandName, CommandArgument, **Parameters):
+                    return False
+            #в случае успешной настройки включаем канал(ы)
+            if not self.SetParameter('ChannelState', '1', ch=ch):
+                return False
+        return True
 
 
     def _ReEnableChannels(self, ):

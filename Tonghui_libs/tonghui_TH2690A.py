@@ -169,74 +169,75 @@ class Device():
             print(f'(Считанное значение: {check})')
         return check == CommandArgument
 
-	def _ProcessDeviceSettings(self, ConfigName, FilePath, FileName, ):
-		''' внутренний метод, используется в ConfigureDevice()
-			парсим полученные извне аргументы и считываем конфигурационный файл
-			для Tonghui TH2690A аргумент ConfigName задает имя пресета настроек в ini файле
-			возвращает True или False '''
-		#формируем список имен измеряемых величин
-		self.DataNames = self.DataFormat.split(',')
-		#считываем файл с пресетами, если не указан fast start
-		if ConfigName != "FastStart":
-			self.AllConfigs = configparser.ConfigParser()
-			self.AllConfigs.optionxform = str
-			#дефолтный или заданный путь к конфигурационному файлу
-			FilePath = FilePath or os.path.dirname(os.path.abspath(__file__)) + '\\config\\'
-			if not self.AllConfigs.read(FilePath + FileName):
-				print(f'Не удалось считать файл: {FilePath + FileName}')
-				return False
-		return True
+    def _ProcessDeviceSettings(self, ConfigName, FilePath, FileName, ):
+        ''' внутренний метод, используется в ConfigureDevice()
+            парсим полученные извне аргументы и считываем конфигурационный файл
+            для Tonghui TH2690A аргумент ConfigName задает имя пресета настроек в ini файле
+            возвращает True или False '''
+        #формируем список имен измеряемых величин
+        self.DataNames = self.DataFormat.split(',')
+        #считываем файл с пресетами, если не указан fast start
+        if ConfigName != "FastStart":
+            self.AllConfigs = configparser.ConfigParser()
+            self.AllConfigs.optionxform = str
+            #дефолтный или заданный путь к конфигурационному файлу
+            FilePath = FilePath or os.path.dirname(os.path.abspath(__file__)) + '\\config\\'
+            if not self.AllConfigs.read(FilePath + FileName):
+                print(f'Не удалось считать файл: {FilePath + FileName}')
+                return False
+        return True
         
-	def ConfigureDevice(self, ConfigName='SAMPLE', 
-						FilePath=None, FileName = 'Tonghui_TH2690A_config.ini', ):
-		''' универсальный метод для внешнего вызова
-			во всех остальных библиотеках должен вызываться точно так же
-			тогда программы смогут работать с любым прибором
-			возвращает True или False '''
-		#считываем все настройки из ini файла в переменную AllConfigs
-		if not self._ProcessDeviceSettings(ConfigName, FilePath, FileName, ):
-			return False
+    def ConfigureDevice(self, ConfigName='SAMPLE', 
+                        FilePath=None, FileName = 'Tonghui_TH2690A_config.ini', ):
+        ''' universalный метод для внешнего вызова
+            во всех остальных библиотеках должен вызываться точно так же
+            тогда программы смогут работать с любым прибором
+            возвращает True или False '''
+        #считываем все настройки из ini файла в переменную AllConfigs
+        if not self._ProcessDeviceSettings(ConfigName, FilePath, FileName, ):
+            return False
 
-		if ConfigName != "FastStart":
-			# ЗДЕСЬ ТРЕБУЕТСЯ ПЕРЕХВАТИТЬ ОШИБКУ, ЕСЛИ ConfigName НЕ СУЩЕСТВУЕТ
-			#получаем словарь настроек для выбранного пресета
-			ConfigDict = self.AllConfigs[ConfigName]
-			
-			#режим работы прибора
-			mode = ConfigDict['Func']
-			#словарь компонентов команд для SetParameter() и GetParameter()
-			Parameters = {'mode': mode, }
-	
-			# ЭТОТ БЛОК ТРЕБУЕТСЯ ПЕРЕПИСАТЬ
-			#Ручное включение диапазона источника напряжения
-			# 1 - -20...20V; 2 - 0...1000V; 3 - -1000...0V
-			# Данную команду не удалось включить в общий перечень, так как она принимает код, 
-			# а аналогичный запрос возвращает текстовую строку. Не проходит автоматическая проверка.
-			self.tonghui.write('SRC:RANGE 1')
-			print('SRC:RANGE 1')
-			time.sleep(self.Pause)
-			# Отключить источник от земли, так как мы вручную подключили проводами по нестандартной схеме
-			self.tonghui.write('SRC:GND FLOAT')
-			print('SRC:GND FLOAT')
-			time.sleep(self.Pause)
-	
-			#итерируем параметры настроек и устанавливаем их
-			for CommandName, CommandArgument in ConfigDict.items():
-				if not self.SetParameter(CommandName, CommandArgument, **Parameters):
-					return False
-					
-			# ЭТОТ БЛОК ТРЕБУЕТСЯ ПЕРЕПИСАТЬ
-			#запускаем измерение
-			'''time.sleep(self.MassivePause)
-			if not self.SetParameter('RunStop', 'RUN', ):
-				return False'''
-			time.sleep(2)
-			#Run/Stop measurement 'FUNC:RUN|STOP'
-			self.tonghui.write('FUNC:RUN')
-			#если не подождать, то измерение стартанет, но кнопка не загорится
-			time.sleep(2)
-		
-		return True
+        if ConfigName != "FastStart":
+            # ЗДЕСЬ ТРЕБУЕТСЯ ПЕРЕХВАТИТЬ ОШИБКУ, ЕСЛИ ConfigName НЕ СУЩЕСТВУЕТ
+            #получаем словарь настроек для выбранного пресета
+            ConfigDict = self.AllConfigs[ConfigName]
+            
+            #режим работы прибора
+            mode = ConfigDict['Func']
+            #словарь компонентов команд для SetParameter() и GetParameter()
+            Parameters = {'mode': mode, }
+    
+            # ЭТОТ БЛОК ТРЕБУЕТСЯ ПЕРЕПИСАТЬ
+            #Ручное включение диапазона источника напряжения
+            # 1 - -20...20V; 2 - 0...1000V; 3 - -1000...0V
+            # Данную команду не удалось включить в общий перечень, так как она принимает код, 
+            # а аналогичный запрос возвращает текстовую строку. Не проходит автоматическая проверка.
+            self.tonghui.write('SRC:RANGE 1')
+            print('SRC:RANGE 1')
+            time.sleep(self.Pause)
+            # Отключить источник от земли, так как мы вручную подключили проводами по нестандартной схеме
+            self.tonghui.write('SRC:GND FLOAT')
+            print('SRC:GND FLOAT')
+            time.sleep(self.Pause)
+    
+            #итерируем параметры настроек и устанавливаем их
+            for CommandName, CommandArgument in ConfigDict.items():
+                if not self.SetParameter(CommandName, CommandArgument, **Parameters):
+                    return False
+                    
+            # ЭТОТ БЛОК ТРЕБУЕТСЯ ПЕРЕПИСАТЬ
+            #запускаем измерение
+            '''time.sleep(self.MassivePause)
+            if not self.SetParameter('RunStop', 'RUN', ):
+                return False'''
+            time.sleep(2)
+            #Run/Stop measurement 'FUNC:RUN|STOP'
+            self.tonghui.write('FUNC:RUN')
+            #если не подождать, то измерение стартанет, но кнопка не загорится
+            time.sleep(2)
+        
+        return True
+
 
     def SingleMeasure(self, ):
         ''' универсальный метод для внешнего вызова
