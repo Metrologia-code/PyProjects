@@ -58,10 +58,6 @@ arg_parser.add_argument('-r', '--run', nargs='+', type=int, default=None,
 arg_parser.add_argument('-tf', '--taskfile', type=str, default='Axes_scan_default.txt',
 						help="Путь к текстовому файлу с таблицей заданий. По умолчанию: 'Axes_scan_default.txt'.")
 
-#Параметр для запуска измерений без предварительной настройки приборов
-arg_parser.add_argument('-fs', '--faststart', action='store_true',
-						help="Запуск измерений без предварительной настройки приборов.")
-
 #Параметр для включения отображения графиков во время эксперимента
 arg_parser.add_argument('-g', '--graph', action='store_true',
 						help="Включить построение графиков во время измерений.")
@@ -100,9 +96,9 @@ for device_name, device_info in req_devices.items():
 	if not DEVICE.Initialize(**connection_details):
 		sys.exit(1)
 		
-	#Вызываем конфигурацию всегда, передавая имя пресета и флаг быстрого запуска
+	#Вызываем конфигурацию, передавая только имя пресета (или словарь каналов)
 	device_config = device_info['Config']
-	if not DEVICE.ConfigureDevice(ConfigName=device_config, FastStart=args.faststart):
+	if not DEVICE.ConfigureDevice(ConfigName=device_config):
 		sys.exit(1)
 		
 	#Сохраняем настроенный прибор в словарь активных приборов
@@ -134,7 +130,17 @@ SavePath = CreateSavePath(LAN_Path='\\\\MetroBulk\\Public\\EXP_DATA', )
 #Делаем пробный опрос приборов для фиксации ключей возвращаемых данных
 device_data_keys = {}
 for device_name, device_obj in DEVICES.items():
-	probe_measure = device_obj.SingleMeasure()
+	probe_measure = False
+	for attempt in range(3):
+		probe_measure = device_obj.SingleMeasure()
+		if probe_measure:
+			break
+		time.sleep(0.5)
+		
+	if not probe_measure:
+		print(f"[ERROR] Не удалось выполнить пробное измерение для прибора {device_name}!")
+		sys.exit(1)
+		
 	device_data_keys[device_name] = list(probe_measure.keys())
 
 #---ОСНОВНОЙ ЦИКЛ ЗАПУСКА ЭКСПЕРИМЕНТОВ---
@@ -161,16 +167,24 @@ for task_index in tasks_to_run:
 			if file_mode == 'w':
 				file.write(build_file_header(device_data_keys) + '\n')
 
-			#---ОСНОВНОЙ ЦИКЛ СКАНИРОВАНИЯ ПО КООРДИНАТАМ ЗАДАНИЯ---		
+			#---ОСНОВНОЙ ЦИКЛ СКАНИРОВАНИЯ ПО КООРДИНАТАМ ЗАДАНИЯ---
 			for cpos in range(task['intervals'] + 1):
+				#Выводим информацию о переезде в начальное положение на первом шаге
+				if cpos == 0:
+					pos_info = ", ".join(f"{ax['name']}={ax['pos'][cpos]:.3f} мм" for ax in task['axes'])
+					print(f"--> Ножи перемещаются в начальное положение: {pos_info}")
+
+				#Фиксируем высокоточную стартовую метку времени измерения
+				t_measure_start = time.perf_counter()
+
 				#Отправляем используемые оси в следущую точку
 				move_axes_to_position(acs, task['axes'], cpos)
 
 				#Опрашиваем положение всех осей
 				FP = [acs.get_fpos(ax['number']) for ax in task['axes']]
 				
-				#Фиксируем высокоточную стартовую метку времени измерения
-				t_measure_start = time.perf_counter()
+				#Стабилизационная задержка перед измерением
+				time.sleep(t)
 				
 				thread_results = {}
 				threads = []
@@ -204,7 +218,7 @@ for task_index in tasks_to_run:
 						device_results_line += f'\t{val:.3e}'
 
 				#Формируем финальную строку и записываем в файл
-				to_write = f'{measurement_time:.3f}\t{FP[0]:.3f}\t{FP[1]:.3f}\t{FP[2]:.3f}\t{FP[3]:.3f}' + device_results_line
+				to_write = f'{measurement_time:.3f}\t{FP:.3f}\t{FP:.3f}\t{FP:.3f}\t{FP:.3f}' + device_results_line
 				print(to_write)
 				file.write(to_write + '\n')
 				
