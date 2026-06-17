@@ -218,7 +218,7 @@ for task_index in tasks_to_run:
 						device_results_line += f'\t{val:.3e}'
 
 				#Формируем финальную строку и записываем в файл
-				to_write = f'{measurement_time:.3f}\t{FP:.3f}\t{FP:.3f}\t{FP:.3f}\t{FP:.3f}' + device_results_line
+				to_write = f'{measurement_time:.3f}\t{FP[0]:.3f}\t{FP[1]:.3f}\t{FP[2]:.3f}\t{FP[3]:.3f}' + device_results_line
 				print(to_write)
 				file.write(to_write + '\n')
 				
