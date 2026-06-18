@@ -243,14 +243,14 @@ def get_experiment_file_info(task_filename, save_path):
     return save_path + filename + ".txt"
 
 
-def process_and_print_devices(req_devices, args):
+def process_and_print_devices(req_devices, faststart_flag):
     #Если включен быстрый старт, переводим все приборы и каналы в режим FastStart
-    if args.faststart:
+    if faststart_flag:
         for dev_info in req_devices.values():
             cfg = dev_info['Config']
             if isinstance(cfg, dict):
                 for ch in cfg.keys():
-                    cfg[ch] = "FastStart"
+                    if cfg[ch] is not None: cfg[ch] = "FastStart"
             else:
                 dev_info['Config'] = "FastStart"
 
