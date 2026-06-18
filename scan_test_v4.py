@@ -3,34 +3,14 @@ from datetime import datetime
 import time, sys, os
 import argparse
 import numpy as np
-from itertools import count
 import threading
 
 #библиотеки приборов Tonghui
 import Tonghui_libs
 #библиотеки контроллера управления ножами
-from Motion_control import Controller, InitSpeed, PrintPosition, StartMove, pos_to_x
+from Motion_control import Controller, InitSpeed, PrintPosition, StartMove, pos_to_x, move_axes_to_position
 #пользовательские библиотеки
-from User_libs import CreateSavePath, ParseTaskFile, ReadINItoDict, ParseCommandLineDevices
-
-#принимает имя файла из задания и путь к директории сохранения, возвращает полный путь к файлу
-def get_experiment_file_info(task_filename, save_path):
-	base_name = task_filename.replace('.txt', '') if task_filename else datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-	
-	if not os.path.exists(save_path + base_name + ".txt"):
-		filename = base_name
-	else:
-		filename = next(f"{base_name}({n})" for n in count(1) if not os.path.exists(save_path + f"{base_name}({n}).txt"))
-		
-	return save_path + filename + ".txt"
-
-#принимает объект контроллера, список осей и индекс текущей точки сканирования, перемещает ножи и ждет остановки
-def move_axes_to_position(acs, axes, cpos):
-	for ax in axes:
-		if ax['is_used']:
-			acs.ptp(ax['number'], ax['pos'][cpos])
-	time.sleep(0.01)
-	acs.wait()
+from User_libs import CreateSavePath, ParseTaskFile, ReadINItoDict, ParseCommandLineDevices, get_experiment_file_info, process_and_print_devices
 
 #принимает словарь ключей приборов, возвращает шапку
 def build_file_header(data_keys):
@@ -58,6 +38,10 @@ arg_parser.add_argument('-r', '--run', nargs='+', type=int, default=None,
 arg_parser.add_argument('-tf', '--taskfile', type=str, default='Axes_scan_default.txt',
 						help="Путь к текстовому файлу с таблицей заданий. По умолчанию: 'Axes_scan_default.txt'.")
 
+#Параметр для запуска измерений без предварительной настройки приборов
+arg_parser.add_argument('-fs', '--faststart', action='store_true',
+						help="Запуск измерений без предварительной настройки приборов.")
+
 #Параметр для включения отображения графиков во время эксперимента
 arg_parser.add_argument('-g', '--graph', action='store_true',
 						help="Включить построение графиков во время измерений.")
@@ -79,7 +63,8 @@ devices_pool = ReadINItoDict('INI', 'Instrument.ini')
 #2. Передаем список из консоли и считанный словарь приборов в функцию разбора
 req_devices = ParseCommandLineDevices(args.devices, devices_pool)
 
-print(req_devices)
+#3. Обрабатываем режимы работы и выводим состав комплекса на экран
+process_and_print_devices(req_devices, args.faststart)
 
 #---ИНИЦИАЛИЗАЦИЯ И НАСТРОЙКА ПРИБОРОВ---
 #Словарь для хранения объектов подключенных приборов
@@ -101,7 +86,7 @@ for device_name, device_info in req_devices.items():
 	if not DEVICE.ConfigureDevice(ConfigName=device_config):
 		sys.exit(1)
 		
-	#Сохраняем настроенный прибор в словарь активных приборов
+	#Сохраняем настроенный прибор в словарь active_devices
 	DEVICES[device_name] = DEVICE
 
 	
@@ -203,10 +188,10 @@ for task_index in tasks_to_run:
 				for thread in threads:
 					thread.join()
 				
-				#Вычисляем время с начала эксперимента
+				#Вычисляем время с начала эксперимента, в которое были завершены все измерения
 				measurement_time = time.time() - start_time
 				
-				#Последовательно опрашиваем все приборы и собираем данные
+				#Последовательно собираем строку из данных
 				device_results_line = ""
 				
 				for device_name in DEVICES.keys():

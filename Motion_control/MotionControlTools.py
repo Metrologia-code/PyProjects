@@ -42,3 +42,11 @@ def pos_to_x(axes, pos):
         w = pos[2] + pos[1] if pos[2] + pos[1] > 0 else 0
         h = pos[0] + pos[3] if pos[0] + pos[3] > 0 else 0
         return w*h
+
+def move_axes_to_position(acs, axes, cpos):
+    import time
+    for ax in axes:
+        if ax['is_used']:
+            acs.ptp(ax['number'], ax['pos'][cpos])
+    time.sleep(0.01)
+    acs.wait()

@@ -2,6 +2,7 @@ from datetime import datetime
 import os, sys
 import configparser
 import numpy as np
+from itertools import count
 
 class Transformation():
 
@@ -167,64 +168,101 @@ def ReadINItoDict(folder_name, config_filename):
 
 #****** Парсер аргумента --devises
 def ParseCommandLineDevices(raw_devices_list, devices_pool):
-	#Словарь, где соберем имя прибора, модель, канал (если есть) и конфиг
-	requested_devices = {}
+    #Словарь, где соберем имя прибора, модель, канал (если есть) и конфиг
+    requested_devices = {}
 
-	for item in raw_devices_list:
-		#1. Разделяем имя прибора (с возможным каналом) и его конфиг по двоеточию
-		if ':' in item:
-			device_part, config_name = item.split(':', 1)
-			config_name = config_name.strip()
-		else:
-			device_part, config_name = item, None
-			
-		#2. Проверяем, указан ли конкретный канал через точку (например, "TH1992B_1.2")
-		if '.' in device_part:
-			device_name, channel_num = device_part.split('.', 1)
-		else:
-			device_name, channel_num = device_part, None
-			
-		#Проверяем наличие базового имени прибора в переданном словаре devices_pool
-		if device_name not in devices_pool:
-			print(f"\n[ОШИБКА]: Прибор '{device_name}' не найден в Instrument.ini!")
-			sys.exit(1)
-			
-		#Если прибор встречается впервые, инициализируем его структуру
-		if device_name not in requested_devices:
-			total_ch = int(devices_pool[device_name]['Channels'])
-			
-			#Для многоканальных приборов создаем заполненный словарь каналов, для одноканальных — None
-			if total_ch > 1:
-				config_structure = {str(ch): None for ch in range(1, total_ch + 1)}
-			else:
-				config_structure = None
-				
-			requested_devices[device_name] = {
-				'LibraryName': devices_pool[device_name]['LibraryName'], #Марка прибора из INI
-				'Config': config_structure,
-			}
+    for item in raw_devices_list:
+        #1. Разделяем имя прибора (с возможным каналом) и его конфиг по двоеточию
+        if ':' in item:
+            device_part, config_name = item.split(':', 1)
+            config_name = config_name.strip()
+        else:
+            device_part, config_name = item, None
+            
+        #2. Проверяем, указан ли конкретный канал через точку (например, "TH1992B_1.2")
+        if '.' in device_part:
+            device_name, channel_num = device_part.split('.', 1)
+        else:
+            device_name, channel_num = device_part, None
+            
+        #Проверяем наличие базового имени прибора в переданном словаре devices_pool
+        if device_name not in devices_pool:
+            print(f"\n[ОШИБКА]: Прибор '{device_name}' не найден в Instrument.ini!")
+            sys.exit(1)
+            
+        #Если прибор встречается впервые, инициализируем его структуру
+        if device_name not in requested_devices:
+            total_ch = int(devices_pool[device_name]['Channels'])
+            
+            #Для многоканальных приборов создаем заполненный словарь каналов, для одноканальных — None
+            if total_ch > 1:
+                config_structure = {str(ch): None for ch in range(1, total_ch + 1)}
+            else:
+                config_structure = None
+                
+            requested_devices[device_name] = {
+                'LibraryName': devices_pool[device_name]['LibraryName'], #Марка прибора из INI
+                'Config': config_structure,
+            }
 
-		#ОБЩИЙ БЛОК ПРОВЕРКИ ОШИБОК ВВОДА
-		is_already_dict = isinstance(requested_devices[device_name]['Config'], dict)
-		
-		#1. Проверяем смешивание одноканального и многоканального режимов
-		if (channel_num is not None) != is_already_dict:
-			print(f"\n[ОШИБКА]: Прибор '{device_name}' не может одновременно настраиваться как одноканальный и многоканальный!")
-			sys.exit(1)
-		#2. Проверяем повторный ввод канала для многоканального прибора
-		elif is_already_dict and requested_devices[device_name]['Config'].get(channel_num) is not None:
-			print(f"\n[ОШИБКА]: Канал {channel_num} для прибора '{device_name}' указан несколько раз!")
-			sys.exit(1)
-		#3. Проверяем повторный ввод для одноканального прибора
-		elif not is_already_dict and requested_devices[device_name]['Config'] is not None:
-			print(f"\n[ОШИБКА]: Прибор '{device_name}' указан в аргументах несколько раз!")
-			sys.exit(1)
+        #ОБЩИЙ БЛОК ПРОВЕРКИ ОШИБОК ВВОДА
+        is_already_dict = isinstance(requested_devices[device_name]['Config'], dict)
+        
+        #1. Проверяем смешивание одноканального и многоканального режимов
+        if (channel_num is not None) != is_already_dict:
+            print(f"\n[ОШИБКА]: Прибор '{device_name}' не может одновременно настраиваться как одноканальный и многоканальный!")
+            sys.exit(1)
+        #2. Проверяем повторный ввод канала для многоканального прибора
+        elif is_already_dict and requested_devices[device_name]['Config'].get(channel_num) is not None:
+            print(f"\n[ОШИБКА]: Канал {channel_num} для прибора '{device_name}' указан несколько раз!")
+            sys.exit(1)
+        #3. Проверяем повторный ввод для одноканального прибора
+        elif not is_already_dict and requested_devices[device_name]['Config'] is not None:
+            print(f"\n[ОШИБКА]: Прибор '{device_name}' указан в аргументах несколько раз!")
+            sys.exit(1)
 
-		#Запись имен конфигураций (если были заданы)
-		final_config = config_name if config_name else "FastStart"
-		if channel_num:
-			requested_devices[device_name]['Config'][channel_num] = final_config
-		else:
-			requested_devices[device_name]['Config'] = final_config
-				
-	return requested_devices
+        #Запись имен конфигураций (если были заданы)
+        final_config = config_name if config_name else "FastStart"
+        if channel_num:
+            requested_devices[device_name]['Config'][channel_num] = final_config
+        else:
+            requested_devices[device_name]['Config'] = final_config
+                
+    return requested_devices
+
+
+
+def get_experiment_file_info(task_filename, save_path):
+    base_name = task_filename.replace('.txt', '') if task_filename else datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    
+    if not os.path.exists(save_path + base_name + ".txt"):
+        filename = base_name
+    else:
+        filename = next(f"{base_name}({n})" for n in count(1) if not os.path.exists(save_path + f"{base_name}({n}).txt"))
+        
+    return save_path + filename + ".txt"
+
+
+def process_and_print_devices(req_devices, args):
+    #Если включен быстрый старт, переводим все приборы и каналы в режим FastStart
+    if args.faststart:
+        for dev_info in req_devices.values():
+            cfg = dev_info['Config']
+            if isinstance(cfg, dict):
+                for ch in cfg.keys():
+                    cfg[ch] = "FastStart"
+            else:
+                dev_info['Config'] = "FastStart"
+
+    print("\n==================================================")
+    print(" СОСТАВ ИЗМЕРИТЕЛЬНОГО КОМПЛЕКСА:")
+    for device_name, device_info in req_devices.items():
+        cfg = device_info['Config']
+        if isinstance(cfg, dict):
+            ch_status = [f"Канал {ch}: {preset if preset else '<Не используется>'}" for ch, preset in cfg.items()]
+            print(f" -> Прибор: {device_name} ({', '.join(ch_status)})")
+        else:
+            status = cfg if cfg else "<Не используется>"
+            print(f" -> Прибор: {device_name}: {status}")
+    print("==================================================\n")
+
