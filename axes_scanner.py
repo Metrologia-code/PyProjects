@@ -5,7 +5,7 @@ import numpy as np
 import threading
 
 #библиотеки приборов
-from Complex_libs.Devices import DEVICES
+from Complex_libs.Devices import Devices
 #библиотеки контроллера управления ножами
 from Motion_control import Controller, InitSpeed, PrintPosition, StartMove, pos_to_x, move_axes_to_position
 #пользовательские библиотеки
@@ -49,7 +49,7 @@ args = arg_parser.parse_args()
 
 #---ФИЛЬТРАЦИЯ, ИНИЦИАЛИЗАЦИЯ И НАСТРОЙКА СТЕНДА---
 #Создаем объект измерительного комплекса, который забирает на себя всю подготовку приборов
-Instruments = DEVICES(args)
+Instruments = Devices(args)
 
 #подключаемся к контроллеру моторов осей и устанавливаем скорости движения
 acs = Controller(ip="192.168.88.10", port=701)
@@ -124,7 +124,7 @@ for task_index in tasks_to_run:
 					thread_results[d_name] = d_obj.SingleMeasure()
 				
 				#Создаем и запускаем поток для каждого подключенного прибора
-				for device_name, device_obj in Instruments.Device.items():
+				for device_name, device_obj in Instruments.devices.items():
 					t_thread = threading.Thread(target=worker, args=(device_name, device_obj))
 					threads.append(t_thread)
 					t_thread.start()
@@ -139,7 +139,7 @@ for task_index in tasks_to_run:
 				#Последовательно собираем строку из данных
 				device_results_line = ""
 				
-				for device_name in Instruments.Device.keys():
+				for device_name in Instruments.devices.keys():
 					results = thread_results.get(device_name)
 					
 					#Вытаскиваем значения по ключам. Если прибор вернул False — пишем NaN

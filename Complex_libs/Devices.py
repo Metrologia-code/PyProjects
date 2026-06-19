@@ -7,7 +7,7 @@ import configparser
 #пользовательские библиотеки
 from User_libs import ReadINItoDict, ParseCommandLineDevices, process_and_print_devices
 
-class DEVICES:
+class Devices:
     def __init__(self, args):
         #1. Считываем все доступные приборы из Devices.ini в пул
         self.devices_pool = ReadINItoDict('Complex_libs', 'Devices.ini')
@@ -19,7 +19,7 @@ class DEVICES:
         process_and_print_devices(self.req_devices, args.faststart)
         
         #4. Инициализируем и настраиваем приборы из запрошенного списка
-        self.Device = {}
+        self.devices = {}
         for device_name, device_info in self.req_devices.items():
             library_folder = self.devices_pool[device_name]['LibraryFolder']
             library_name = device_info['LibraryName']
@@ -40,11 +40,11 @@ class DEVICES:
                 sys.exit(1)
                 
             #Сохраняем настроенный прибор в словарь активных устройств класса
-            self.Device[device_name] = device
+            self.devices[device_name] = device
             
         #5. Делаем пробный опрос приборов для фиксации ключей возвращаемых данных
         self.device_data_keys = {}
-        for device_name, device_obj in self.Device.items():
+        for device_name, device_obj in self.devices.items():
             probe_measure = False
             for attempt in range(3):
                 probe_measure = device_obj.SingleMeasure()
