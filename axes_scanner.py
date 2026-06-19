@@ -9,18 +9,7 @@ from Complex_libs.Devices import DEVICES
 #библиотеки контроллера управления ножами
 from Motion_control import Controller, InitSpeed, PrintPosition, StartMove, pos_to_x, move_axes_to_position
 #пользовательские библиотеки
-from User_libs import CreateSavePath, ParseTaskFile, build_file_header
-
-#принимает имя файла из задания и путь к директории сохранения, возвращает полный путь к файлу
-def get_experiment_file_info(task_filename, save_path):
-	base_name = task_filename.replace('.txt', '') if task_filename else datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-	
-	if not os.path.exists(save_path + base_name + ".txt"):
-		filename = base_name
-	else:
-		filename = next(f"{base_name}({n})" for n in count(1) if not os.path.exists(save_path + f"{base_name}({n}).txt"))
-		
-	return save_path + filename + ".txt"
+from User_libs import CreateSavePath, ParseTaskFile, build_file_header, get_experiment_file_info
 
 #---БЛОК РАЗБОРА АРГУМЕНТОВ КОМАНДНОЙ СТРОКИ---
 arg_parser = argparse.ArgumentParser(

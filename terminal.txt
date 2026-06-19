@@ -1,7 +1,6 @@
+python axes_scanner.py -d TH1992B_1.2:TEST_VOLT TH2690A_1 -tf Axes_test_task_01.txt
 
-python scan_test_v4.py -d TH1992B_1.1 TH1992B_1.2 TH2690A_1 -tf Axes_test_task_01.txt
-
-python scan_test_v4.py -d TH1992B_1.2:TEST_VOLT TH2690A_1 -tf Axes_test_task_01.txt
+python axes_scanner.py -d TH1992B_1.2:TEST_VOLT TH2690A_1 -fs
 
 ИЗВЕСТНЫЕ ПРОБЛЕМЫ:
 

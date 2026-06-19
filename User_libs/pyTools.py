@@ -266,3 +266,11 @@ def process_and_print_devices(req_devices, faststart_flag):
             print(f" -> Прибор: {device_name}: {status}")
     print("==================================================\n")
 
+#принимает словарь ключей приборов, возвращает шапку
+def build_file_header(data_keys):
+	header = 'time, s\tAPT pos, mm\tAPL pos, mm\tAPR pos, mm\tAPB pos, mm'
+	for device_name, keys in data_keys.items():
+		for key in keys:
+			header += f'\t{device_name}.{key}'
+	return header
+
