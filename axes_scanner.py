@@ -10,6 +10,7 @@ from Complex_libs.Devices import Devices
 from Motion_control import Controller, InitSpeed, PrintPosition, StartMove, pos_to_x, move_axes_to_position
 #пользовательские библиотеки
 from User_libs import CreateSavePath, ParseTaskFile, build_file_header, get_experiment_file_info
+from pyPlot import PlotterClass
 
 #---БЛОК РАЗБОРА АРГУМЕНТОВ КОМАНДНОЙ СТРОКИ---
 arg_parser = argparse.ArgumentParser(
@@ -72,6 +73,14 @@ tasks_to_run = args.run if args.run else range(len(all_tasks))
 
 #Генерируем путь к папке сохранения результатов
 SavePath = CreateSavePath(LAN_Path='\\\\MetroBulk\\Public\\EXP_DATA', )
+
+#---ИНИЦИАЛИЗАЦИЯ И СВЯЗЫВАНИЕ МНОГООСЕВОГО ГРАФИКА---
+Plotter = None
+if args.graph and args.devices:
+	#Формируем параметры скользящего окна (pts) на основе периода шага
+	plot_pts = {'x_step': args.period, 'x_pts': 100}
+	#Создаем объект нашего универсального динамического плоттера
+	Plotter = PlotterClass(raw_graph_lines=args.devices, x_label='t, сек', plot_name='Сканирование щелью', pts=plot_pts)
 
 #---ОСНОВНОЙ ЦИКЛ ЗАПУСКА ЭКСПЕРИМЕНТОВ---
 for task_index in tasks_to_run:
@@ -148,9 +157,13 @@ for task_index in tasks_to_run:
 						device_results_line += f'\t{val:.3e}'
 
 				#Формируем финальную строку и записываем в файл
-				to_write = f'{measurement_time:.3f}\t{FP[0]:.3f}\t{FP[1]:.3f}\t{FP[2]:.3f}\t{FP[3]:.3f}' + device_results_line
+				to_write = f'{measurement_time:.3f}\t{FP:.3f}\t{FP:.3f}\t{FP:.3f}\t{FP:.3f}' + device_results_line
 				print(to_write)
 				file.write(to_write + '\n')
+				
+				#Обновляем динамический график в реальном времени, если опция включена
+				if Plotter:
+					Plotter.plot_routine(cpos, measurement_time, thread_results)
 				
 				#Вычисляем фактически затраченное время на опрос и расчеты
 				t_fact = time.perf_counter() - t_measure_start
