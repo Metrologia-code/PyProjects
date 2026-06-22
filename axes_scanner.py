@@ -9,8 +9,7 @@ from Complex_libs.Devices import Devices
 #библиотеки контроллера управления ножами
 from Motion_control import Controller, InitSpeed, PrintPosition, StartMove, pos_to_x, move_axes_to_position
 #пользовательские библиотеки
-from User_libs import CreateSavePath, ParseTaskFile, build_file_header, get_experiment_file_info
-from pyPlot import PlotterClass
+from User_libs import CreateSavePath, ParseTaskFile, build_file_header, get_experiment_file_info, Plotter
 
 #---БЛОК РАЗБОРА АРГУМЕНТОВ КОМАНДНОЙ СТРОКИ---
 arg_parser = argparse.ArgumentParser(
@@ -35,8 +34,9 @@ arg_parser.add_argument('-fs', '--faststart', action='store_true',
 						help="Запуск измерений без предварительной настройки приборов.")
 
 #Параметр для включения отображения графиков во время эксперимента
-arg_parser.add_argument('-g', '--graph', action='store_true',
-						help="Включить построение графиков во время измерений.")
+arg_parser.add_argument('-g', '--graph', nargs='+', type=str, default=None,
+						help="Имена каналов и трансформаций для вывода на график,\n"
+							 "например: -g TH1992B_1.CURR1 TH1992B_1.RES1=T1:Pt100_default")
 
 #Параметр для сохранения всех результатов в один общий файл
 arg_parser.add_argument('-sf', '--singlefile', action='store_true',
@@ -74,14 +74,6 @@ tasks_to_run = args.run if args.run else range(len(all_tasks))
 #Генерируем путь к папке сохранения результатов
 SavePath = CreateSavePath(LAN_Path='\\\\MetroBulk\\Public\\EXP_DATA', )
 
-#---ИНИЦИАЛИЗАЦИЯ И СВЯЗЫВАНИЕ МНОГООСЕВОГО ГРАФИКА---
-Plotter = None
-if args.graph and args.devices:
-	#Формируем параметры скользящего окна (pts) на основе периода шага
-	plot_pts = {'x_step': args.period, 'x_pts': 100}
-	#Создаем объект нашего универсального динамического плоттера
-	Plotter = PlotterClass(raw_graph_lines=args.devices, x_label='t, сек', plot_name='Сканирование щелью', pts=plot_pts)
-
 #---ОСНОВНОЙ ЦИКЛ ЗАПУСКА ЭКСПЕРИМЕНТОВ---
 for task_index in tasks_to_run:
 	task = all_tasks[task_index]
@@ -95,6 +87,19 @@ for task_index in tasks_to_run:
 		
 	print(f"\n Запуск эксперимента №{task_index}.")
 	print(f"Результаты сохраняем в: {full_save_path}")
+	
+	#---ИНИЦИАЛИЗАЦИЯ И СВЯЗЫВАНИЕ МНОГООСЕВОГО ГРАФИКА---
+	Plots = None
+	if args.graph:
+		import matplotlib.pyplot as plt
+		plt.close('all')
+		
+		print(f"График сохраняем в: {full_save_path.replace('.txt', '.png')}")
+		plot_pts = {'x_step': args.period, 'x_pts': 100}
+		Plots = Plotter(raw_graph_lines=args.graph, x_label='t, сек', plot_name=f"Сканирование: {task['filename']}", pts=plot_pts)
+		
+		#Даем окну Matplotlib время на гарантированный рендеринг в операционной системе стенда
+		time.sleep(1)
 	
 	try:
 		#Время начала измерений
@@ -157,13 +162,13 @@ for task_index in tasks_to_run:
 						device_results_line += f'\t{val:.3e}'
 
 				#Формируем финальную строку и записываем в файл
-				to_write = f'{measurement_time:.3f}\t{FP:.3f}\t{FP:.3f}\t{FP:.3f}\t{FP:.3f}' + device_results_line
+				to_write = f'{measurement_time:.3f}\t{FP[0]:.3f}\t{FP[1]:.3f}\t{FP[2]:.3f}\t{FP[3]:.3f}' + device_results_line
 				print(to_write)
 				file.write(to_write + '\n')
 				
 				#Обновляем динамический график в реальном времени, если опция включена
-				if Plotter:
-					Plotter.plot_routine(cpos, measurement_time, thread_results)
+				if Plots:
+					Plots.plot_routine(cpos, measurement_time, thread_results)
 				
 				#Вычисляем фактически затраченное время на опрос и расчеты
 				t_fact = time.perf_counter() - t_measure_start
@@ -174,6 +179,10 @@ for task_index in tasks_to_run:
 					time.sleep(t_sleep)
 				else:
 					print(f"[WARNING] Итерация {cpos} не уложилась в период! Затрачено: {t_fact:.3f} с из {args.period} с.")
+
+			#Эксперимент успешно завершен, сохраняем снимок графика
+			if Plots:
+				Plots.save_figure(full_save_path.replace('.txt', ''))
 
 	except KeyboardInterrupt:
 		print("Программа остановлена пользователем")

@@ -26,3 +26,11 @@ def StartMove(acs, used_axis: int, to_go: int):
 
 def pos_to_x(axes, pos):
     return 0.0
+
+# Добавляем недостающую функцию измерительного шага осей
+def move_axes_to_position(acs, axes, cpos):
+    for ax in axes:
+        if ax['is_used']:
+            acs.ptp(ax['number'], ax['pos'][cpos])
+    time.sleep(0.01)
+    acs.wait()
