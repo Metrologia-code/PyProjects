@@ -7,6 +7,9 @@ python axes_scanner.py -d TH1992B_1.1 TH1992B_1.2 TH2690A_1 -g TH1992B_1.VOLT1 T
 python axes_scanner.py -d TH1992B_1.1 TH1992B_1.2 TH2690A_1 -g TH1992B_1.VOLT1 TH1992B_1.RES2=T2:Pt1000_stand_3 TH1992B_1.VOLT2
 python axes_scanner.py -d TH1992B_1.1 TH1992B_1.2 TH2690A_1 -g TH1992B_1.VOLT1 TH1992B_1.RES2=T2:Pt1000_stand_3 TH2690A_1.CURR
 python axes_scanner.py -d TH1992B_1.1 TH1992B_1.2 TH2690A_1 -g TH1992B_1.VOLT1
+python axes_scanner.py -d TH1992B_1.1 TH1992B_1.2 -g TH1992B_1.CURR1
+
+python axes_scanner.py -d TH1992B_1.1 TH1992B_1.2 -g TH1992B_1.CURR1 TH1992B_1.CURR2 TH1992B_1.VOLT1
 
 ИЗВЕСТНЫЕ ПРОБЛЕМЫ:
 

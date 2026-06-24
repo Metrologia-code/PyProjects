@@ -95,11 +95,11 @@ for task_index in tasks_to_run:
 		plt.close('all')
 		
 		print(f"График сохраняем в: {full_save_path.replace('.txt', '.png')}")
-		plot_pts = {'x_step': args.period, 'x_pts': 100}
-		Plots = Plotter(raw_graph_lines=args.graph, x_label='t, сек', plot_name=f"Сканирование: {task['filename']}", pts=plot_pts)
+		plot_pts = 20
+		Plots = Plotter(args=args.graph, x_label='t, сек', plot_name=f"Сканирование: {task['filename']}", x_pts=plot_pts)
 		
 		#Даем окну Matplotlib время на гарантированный рендеринг в операционной системе стенда
-		time.sleep(1)
+		time.sleep(0.5)
 	
 	try:
 		#Время начала измерений
