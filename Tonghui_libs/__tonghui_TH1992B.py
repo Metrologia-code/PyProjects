@@ -19,7 +19,7 @@ class Device:
         # На стыке их объединения строковый split('_') в плоттере сломается и выдаст int() NameError
         results = {
             'CURR1': 1.5e-3 + random.uniform(-1e-4, 1e-4), # Порядок -3 -> уйдет в класс 10^0
-            'VOLT1': 12.0 + random.uniform(-0.5, 0.5),
+            'VOLTage1': 12.0 + random.uniform(-0.5, 0.5),
             'RES1':  100.0 + random.uniform(-2.0, 2.0),
             
             'CURR2': 4.5e-12 + random.uniform(-5e-13, 5e-13), # Порядок -12 -> уйдет в класс 10^-12

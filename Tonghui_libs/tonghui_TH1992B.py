@@ -211,7 +211,9 @@ class Device():
         #эксклюзивно для источника-измерителя Tonghui TH1992B
         self.ChannelsList = [ch for ch, preset in ConfigName.items() if preset is not None]
         #формируем список имен измеряемых величин в соответствии с каналами измерения
-        self.DataNames = [f'{name}{ch}' for ch in self.ChannelsList for name in self.DataFormat.split(',')]
+        #self.DataNames = [f'{name}{ch}' for ch in self.ChannelsList for name in self.DataFormat.split(',')]
+        #replace('VOLTage', 'VOLT') - это костыль, который затыкает дырку в архитектурной логике
+        self.DataNames = [f"{name.replace('VOLTage', 'VOLT')}{ch}" for ch in self.ChannelsList for name in self.DataFormat.split(',')]
         #формируем строку из списка каналов для аргумента команлы MEASure?
         self.ChannelsString = ','.join(self.ChannelsList)
         #считываем файл с пресетами, если хотя бы один канал требует загрузки конфигурации (не FastStart)
