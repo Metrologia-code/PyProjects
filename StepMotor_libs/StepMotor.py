@@ -9,7 +9,7 @@ from time import sleep
 import datetime
 
 # Задаем расширенный формат логирования: время - уровень - сообщение
-logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", level=logging.DEBUG, datefmt="%Y-%m-%d %H:%M:%S")
+logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", level=logging.ERROR, datefmt="%Y-%m-%d %H:%M:%S")
 
 # Получаем экземпляр логгера библиотеки
 logger = logging.getLogger("pymodbus")
