@@ -26,7 +26,7 @@ class Device():
         #эксклюзивно для измерителя Tonghui TH2690A
         #это формат строки, в котором возвращает данные команда FETCH:ALL?
         #для всех приборов: используется для составления словаря измеренных данных
-        self.DataFormat = 'VOLTage,CURR,char,time,vsource,math,temp,hum'
+        self.DataFormat = 'VOLT,CURR,char,time,vsource,math,temp,hum'
         
         #DeviceCommands содержит {'ИмяКоманды' : ['КодКоманды', 'Пауза'], }
         #{val} - аргумент команды прибора. возможные значения указаны в комментариях
@@ -257,7 +257,7 @@ class Device():
         #формируем словарь измеренных данных
         DictData = dict(zip(self.DataNames, ListData))
         #return DictData
-        ReturnKeys = ['VOLTage', 'CURR', ]
+        ReturnKeys = ['VOLT', 'CURR', ]
         ReturnDict = {k: float(DictData[k]) for k in ReturnKeys if k in DictData}
         return ReturnDict
 

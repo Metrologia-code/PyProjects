@@ -110,7 +110,7 @@ def FormatTime(seconds, ):
     return f"{h:02d} час {m:02d} мин {s:02d} сек" if h else f"{m:02d} мин {s:02d} сек" if m else f"{s:02d} сек"
 
 
-#****** Парсер текстового файла со списком экспериментов для сканирования щелью
+'''#****** Парсер текстового файла со списком экспериментов для сканирования щелью
 def ParseTaskFile(task_filename, ):
     #
     def parse_axis_values(value_str):
@@ -126,8 +126,8 @@ def ParseTaskFile(task_filename, ):
             parts = line.split('#')[0].strip().split('\t')
             #2. Пропускаем строку, если она пустая
             if parts == ['']: continue
-            '''а вот как можно было одной строкой
-            if (parts := line.split('#')[0].strip().split('\t')) == ['']: continue'''
+            #а вот как можно было одной строкой
+            #if (parts := line.split('#')[0].strip().split('\t')) == ['']: continue
             #3. Заполняем intervals (всегда 5-й элемент по счету)
             intervals = int(parts[4])
             #4. Проверяем имя файла (6-й элемент по счету). Если его нет — оставляем пустым
@@ -148,6 +148,53 @@ def ParseTaskFile(task_filename, ):
                 #ax['is_used'] = (start != end)
             #6. Сохраняем словарь-эксперимент в общий пул
             ALL_TASKS.append({'axes': axes, 'intervals': intervals, 'filename': filename})
+    return ALL_TASKS'''
+
+def ParseTaskFile(task_filename, ):
+    #
+    def parse_axis_values(value_str):
+        # Разбираем '-6:6' или '20'  в кортеж (start, end)
+        parts = value_str.split(":")
+        start, end = parts if len(parts) > 1 else parts * 2
+        return float(start), float(end)
+
+    #---ПАРСИНГ ТЕКСТОВОГО ФАЙЛА---
+    ALL_TASKS = []
+    with open(task_filename, "r", encoding="utf-8") as file:
+        for line in file:
+            #1. Отрезаем комментарий, убираем пробелы по краям и режем по табуляции
+            parts = line.split('#')[0].strip().split('\t')
+            #2. Пропускаем строку, если она пустая
+            if parts == ['']: continue
+            #а вот как можно было одной строкой
+            #if (parts := line.split('#')[0].strip().split('\t')) == ['']: continue
+            #3. Заполняем intervals (всегда 5-й элемент по счету)
+            intervals = int(parts[4])
+            #4. Проверяем post_delay (6-й элемент по счету). Если его нет или не число — оставляем 0.0
+            try:
+                post_delay = float(parts[5])
+            except (IndexError, ValueError):
+                post_delay = 0.0
+            #5. Проверяем имя файла (последний элемент). Если это число — значит, файла нет
+            try:
+                float(parts[-1])
+                filename = ""
+            except (IndexError, ValueError):
+                filename = parts[-1].strip()
+            #6. Парсим значения координат и формируем словарь осей
+            apt, apl, apr, apb = map(parse_axis_values, parts[:4])
+            axes = [
+                {'name': 'APT', 'number': 0, 'start': apt[0], 'end': apt[1]},
+                {'name': 'APL', 'number': 1, 'start': apl[0], 'end': apl[1]},
+                {'name': 'APR', 'number': 2, 'start': apr[0], 'end': apr[1]},
+                {'name': 'APB', 'number': 3, 'start': apb[0], 'end': apb[1]}
+            ]
+            #Добавляем к словарям осей массивы координат и информацию об их использовании
+            for ax in axes:
+                ax['pos'] = np.linspace(ax['start'], ax['end'], intervals + 1)
+                ax['is_used'] = (ax['start'] != ax['end'])
+            #7. Сохраняем словарь-эксперимент в общий пул
+            ALL_TASKS.append({'axes': axes, 'intervals': intervals, 'post_delay': post_delay, 'filename': filename})
     return ALL_TASKS
 
 
@@ -266,11 +313,11 @@ def process_and_print_devices(req_devices, faststart_flag):
             print(f" -> Прибор: {device_name}: {status}")
     print("==================================================\n")
 
-#принимает словарь ключей приборов, возвращает шапку
-def build_file_header(data_keys):
-	header = 'time, s\tAPT pos, mm\tAPL pos, mm\tAPR pos, mm\tAPB pos, mm'
-	for device_name, keys in data_keys.items():
-		for key in keys:
-			header += f'\t{device_name}.{key}'
-	return header
+# Принимает словарь ключей приборов, возвращает шапку
+def build_file_header(data_keys, prefix=''):
+    header = prefix
+    for device_name, keys in data_keys.items():
+        for key in keys:
+            header += f'\t{device_name}.{key}'
+    return header + '\n'
 

@@ -8,14 +8,17 @@ python devices_logger.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I TH2690A_1:FDUK -
 #Эта команда тестировалась
 python axes_scanner.py -d TH1992B_1.1:FDUCK_I TH1992B_1.2:APL_I -g TH1992B_1.CURR1 TH1992B_1.CURR2 TH1992B_1.VOLT1 TH1992B_1.VOLT2
 python devices_logger.py -d TH1992B_1.1:FDUCK_I TH1992B_1.2:APL_I -g TH1992B_1.CURR1 TH1992B_1.CURR2 TH1992B_1.VOLT1 TH1992B_1.VOLT2
+python axes_scanner.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I TH2690A_1:FDUK -g TH1992B_1.CURR1 TH1992B_1.CURR2 TH2690A_1.CURR
+python axes_scanner.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I TH2690A_1:FDUK -g TH1992B_1.CURR1 TH1992B_1.CURR2 TH2690A_1.CURR -x APT
 
 
 ИЗВЕСТНЫЕ ПРОБЛЕМЫ:
 
 1. Библиотека пикоамперметра не включает амперметр при настройке (необходимо переписать)
-2. В библиотеке пикоамперметра все еще 'VOLTage'
 
 ДОБАВИТЬ:
 
 1. Точки на линиях графика, опционально
 2. Пересчет измеренных величин (для графика и для файла)
+3. Объеденить функции SavePath и full_save_path
+4. Переподключение для логгера

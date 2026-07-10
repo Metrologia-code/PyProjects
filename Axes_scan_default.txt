@@ -1,3 +1,4 @@
-#APT	APL	APR	APB	intvls	filename
-20	20	20	20	30	dummy_test_file.txt
-#25	25	25	25	10	dummy_test_file_2.txt
+#APT	APL	APR	APB	intvls	post_delay	filename
+10:20	20	20	20	15	0.5	test_file_1.txt #здесь можно комментарий написать
+10:25	25	25	25	15	0.1	test_file_2.txt #а можно не написать
+10:25	25	25	25	120		test_file_3.txt #а здесь пробел в имени, задержка не указана (дефолт 0.0)
