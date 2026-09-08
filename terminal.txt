@@ -12,6 +12,17 @@ python axes_scanner.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I TH2690A_1:FDUK -g 
 python axes_scanner.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I TH2690A_1:FDUK -g TH1992B_1.CURR1 TH1992B_1.CURR2 TH2690A_1.CURR -x APT
 
 
+
+08.09.2026
+#EXP1
+python devices_logger.py -d TH2690A_1:FDUK_AUTO -g TH2690A_1.CURR -n 7200 -cp 360
+#EXP2
+python axes_scanner.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I -g TH1992B_1.CURR1 TH1992B_1.CURR2 -tf EXP2_APL+APT.txt
+EXP3
+python axes_scanner.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I TH2690A_1:FDUK_AUTO -g TH2690A_1.CURR -tf EXP3_MAPPING.txt -sf
+EXP4
+python axes_scanner.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I TH2690A_1:FDUK_AUTO -g TH2690A_1.CURR -tf EXP4_OPENING.txt -x APT
+
 ИЗВЕСТНЫЕ ПРОБЛЕМЫ:
 
 1. Библиотека пикоамперметра не включает амперметр при настройке (необходимо переписать)
@@ -22,3 +33,5 @@ python axes_scanner.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I TH2690A_1:FDUK -g 
 2. Пересчет измеренных величин (для графика и для файла)
 3. Объеденить функции SavePath и full_save_path
 4. Переподключение для логгера
+
+5. В логгере -cp - значения, а не точки?

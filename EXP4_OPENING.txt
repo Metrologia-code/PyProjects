@@ -1,0 +1,2 @@
+#APT	APL	APR	APB	intvls	post_delay	filename
+-0.5:6	-0.5:6	-0.5:6	-0.5:6	65	0.0	04_OPENING.txt #сканирование раскрытием 4 щелей из центра
