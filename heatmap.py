@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 # 1. Загрузка данных из файла
 # Укажите имя вашего файла вместо 'experiment_data.txt'
@@ -20,28 +21,34 @@ curr = data[:, 12]  # 13-я колонка (последняя)
 x = (apr - apl) / 2
 y = (apt - apb) / 2
 
-# Опционально: переводим ток в наноамперы (нА) для удобства отображения порядка величин
-curr_nA = curr * 1e9
+# 4. Подготавливаем данные для построения
+df = pd.DataFrame({'x': x, 'y': y, 'curr': curr})
+pivot_df = df.pivot(index='y', columns='x', values='curr')
 
-# 4. Построение хитмапа
-plt.figure(figsize=(8, 6))
+# 5. Построение хитмапа
+# Создаём фигуру и оси
+fig = plt.figure(num='Current Map', figsize=(12, 9))
+ax = plt.gca()
 
-# plt.tripcolor строит сетку (хитмап) по произвольным/неравномерным координатам x, y
-heatmap = plt.tripcolor(x, y, curr_nA, cmap="viridis", shading="flat")
+# Делаем область построения квадратной
+ax.set_aspect('equal')
 
-# Наносим точки измерений поверх, чтобы видеть, где физически проходил датчик
-plt.scatter(
-    x, y, c=curr_nA, cmap="viridis", edgecolors="black", linewidths=0.5, s=50
-)
+# Строим сетку (хитмап)
+plt.pcolormesh(pivot_df.columns, pivot_df.index, pivot_df.values, cmap='viridis', edgecolors='k', lw=0.1)
 
 # Настройка оформления графика
-cbar = plt.colorbar(heatmap)
-cbar.set_label("Ток TH2690A_1.CURR (нА)", fontsize=11)
-
-plt.xlabel("x = (APR - APL) / 2, мм", fontsize=11)
-plt.ylabel("y = (APT - APB) / 2, мм", fontsize=11)
-plt.title("Карта значений тока в координатах позиционирования", fontsize=12)
+cbar = plt.colorbar()
+cbar.set_label("Ток TH2690A_1.CURR, А", fontsize=11)
+plt.xlabel("x, мм", fontsize=11)
+plt.ylabel("y, мм", fontsize=11)
+plt.title("Карта значений тока", fontsize=12)
 plt.grid(True, linestyle="--", alpha=0.5)
 
+# Автоматически подгоняем размеры фигуры, чтобы всё влезло
 plt.tight_layout()
+
+# Сохранение графика в файл
+plt.savefig(fname=file_path.split('.')[0] + '.png', dpi=300, bbox_inches='tight', format='png')
+
+# Отображаем график на экране
 plt.show()
