@@ -1,0 +1,2 @@
+#APT	APL	APR	APB	intvls	post_delay	filename
+-35:35	-35:35	-35:35	-35:35	1	0.0	end_search.txt #проверка положения концевиков

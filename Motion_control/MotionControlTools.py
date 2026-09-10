@@ -52,3 +52,4 @@ def MoveBlades(acs, axes, cpos):
                 acs.ptp(ax['number'], ax['pos'][cpos])
     time.sleep(0.01)
     acs.wait()
+    #print('wait закончился')

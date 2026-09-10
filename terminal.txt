@@ -23,6 +23,17 @@ python axes_scanner.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I TH2690A_1:FDUK_AUT
 EXP4
 python axes_scanner.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I TH2690A_1:FDUK_AUTO -g TH2690A_1.CURR -tf EXP4_OPENING.txt -x APT
 
+10.09.2026
+python axes_scanner.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I TH2690A_1:FDUK_AUTO -g TH1992B_1.CURR1 -x APL -tf 2029.09.10_APL.txt
+python axes_scanner.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I TH2690A_1:FDUK_AUTO -g TH1992B_1.CURR2 -x APT -tf 2029.09.10_APT.txt
+python axes_scanner.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I TH2690A_1:FDUK_AUTO -g TH1992B_1.CURR1 -x APR -tf 2029.09.10_APR.txt
+python axes_scanner.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I TH2690A_1:FDUK_AUTO -g TH1992B_1.CURR2 -x APB -tf 2029.09.10_APB.txt
+маленький скан:
+python axes_scanner.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I TH2690A_1:FDUK_AUTO -g TH2690A_1.CURR -x APR -tf 2029.09.10_APR_small_scan.txt
+python axes_scanner.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I TH2690A_1:FDUK_AUTO -g TH2690A_1.CURR -x APB -tf 2029.09.10_APB_small_scan.txt
+тест концевиков:
+python axes_scanner.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I -tf end_switch.txt
+
 ИЗВЕСТНЫЕ ПРОБЛЕМЫ:
 
 1. Библиотека пикоамперметра не включает амперметр при настройке (необходимо переписать)
