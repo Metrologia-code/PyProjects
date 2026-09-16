@@ -94,7 +94,9 @@ class Plotter:
                 'ydata': [],
                 'line_obj': None,
                 'is_left': is_left,
-                'offset': offset
+                'offset': offset,
+                'order': 0,
+                'y_max': 0.0
             }
 
         # Инициализация графического окна
@@ -105,6 +107,14 @@ class Plotter:
         self.base_ax.tick_params(axis='x', rotation=65)
         self.base_ax.xaxis.set_major_formatter(FuncFormatter(lambda x, pos: f"{x:.1f}"))
         self.xdata = []
+
+    def _calc_order(self, max_abs):
+        # Порядок оси (декада множителя 1eN) по максимуму окна; меняется только если
+        # максимум выходит за пределы [1e-3, 1e3]
+        if max_abs <= 0:
+            return 0, 0.0
+        raw_order = int(np.floor(np.log10(max_abs)))
+        return (raw_order if abs(raw_order) >= 3 else 0), max_abs
 
     def _init_axis(self, item, cfg):
         # Создание оси Y и настройка ее форматирования для одной линии
@@ -119,16 +129,22 @@ class Plotter:
 
         cfg['line_obj'], = target_ax.plot(self.xdata, cfg['ydata'], label=cfg['label'], color=cfg['color'])
         
-        # Порядок оси меняется только если значения выходят за пределы [1e-3, 1e3]
-        valid_data = [abs(y) for y in cfg['ydata'] if not np.isnan(y) and y != 0]
-        max_val = max(valid_data) if valid_data else 1.0
-        raw_order = int(np.floor(np.log10(max_val))) if max_val > 0 else 0
-        order_val = raw_order if abs(raw_order) >= 3 else 0
+        # Максимум окна и порядок оси вычисляются из первой точки; далее порядок
+        # пересчитывается динамически в plot_routine с гистерезисом (мертвая зона x10)
+        cfg['y_max'] = 0.0
+        for y in cfg['ydata']:
+            if not np.isnan(y):
+                a = abs(y)
+                if a > cfg['y_max']:
+                    cfg['y_max'] = a
+        cfg['order'], _ = self._calc_order(cfg['y_max'])
+        order_val = cfg['order']
         
-        # Делит значения на порядок оси, чтобы подписи были читаемыми, и добавляет множитель (1eN) к подписи оси
+        # Делит значения на порядок оси, чтобы подписи были читаемыми, и добавляет множитель (1eN) к подписи оси.
+        # Форматтер читает cfg['order'] "на лету" — при смене порядка переустанавливать его не требуется
         target_ax.yaxis.set_major_formatter(
-            FuncFormatter(lambda y, pos, o=order_val: 
-                f"{y/(10**o):.3g}" if o != 0 else f"{y:.3g}")
+            FuncFormatter(lambda y, pos:
+                f"{y/(10**cfg['order']):.3g}" if cfg['order'] != 0 else f"{y:.3g}")
         )
         
         # Создание подписи оси Y
@@ -157,8 +173,22 @@ class Plotter:
             raw_val = dev_data.get(key_part, float('nan'))
 
             cfg['ydata'].append(raw_val)
+
+            # Инкрементальное ведение максимума окна (O(1) на шаг);
+            # полный пересчет по окну — только когда максимум покидает окно (редко)
             if len(cfg['ydata']) > self.x_pts:
+                old_head = cfg['ydata'][0]
                 cfg['ydata'] = cfg['ydata'][1:]
+                if not np.isnan(old_head) and abs(old_head) >= cfg['y_max']:
+                    cfg['y_max'] = 0.0
+                    for y in cfg['ydata']:
+                        if not np.isnan(y):
+                            a = abs(y)
+                            if a > cfg['y_max']:
+                                cfg['y_max'] = a
+            raw_abs = abs(raw_val) if not np.isnan(raw_val) else 0.0
+            if raw_abs > cfg['y_max']:
+                cfg['y_max'] = raw_abs
 
             if cfg['line_obj'] is None:
                 self._init_axis(item, cfg)
@@ -167,6 +197,20 @@ class Plotter:
             cfg['line_obj'].set_ydata(cfg['ydata'])
             
             ax_obj = cfg['line_obj'].axes
+
+            # Автоподбор порядка оси по текущему максимуму с гистерезисом (мертвая зона x10):
+            # порядок меняется только когда максимум вышел за границы соседней декады
+            new_order, max_abs = self._calc_order(cfg['y_max'])
+            if max_abs > 0 and new_order != cfg['order']:
+                cur_pow = 10 ** cfg['order'] if cfg['order'] != 0 else 1.0
+                if max_abs >= cur_pow * 10 or max_abs <= cur_pow * 0.1:
+                    cfg['order'] = new_order
+                    if cfg['order'] != 0:
+                        unit_label = f"{item}, {cfg['unit']} (1e{cfg['order']})"
+                    else:
+                        unit_label = f"{item}, {cfg['unit']}" if cfg['unit'] else item
+                    ax_obj.set_ylabel(ylabel=unit_label, fontname='Arial', fontsize=self.FONT_SIZE_TICK)
+                    ax_obj.yaxis.label.set_color(cfg['line_obj'].get_color())
             # relim пересчитывает границы данных, autoscale_view применяет их к осям — нужны оба вызова
             ax_obj.relim()
             ax_obj.autoscale_view()
