@@ -1,0 +1,2 @@
+#APT	APL	APR	APB	intvls	post_delay	filename
+0	0.5	0.5	-1.0:1.0	100	0.0	03_APB_-1_to_1.txt #APT установлен в 0, сканирование APB от -1 до 1

@@ -1,0 +1,2 @@
+#APT	APL	APR	APB	intvls	post_delay	filename
+5.25:-4.75	0.25	0.25	-4.75:5.25	40	0.0	07_APT_APB_window_scan.txt #Сканирование пятном вдоль вертикальной оси сверху-вниз

@@ -1,0 +1,55 @@
+18.09.2026
+Эксперимент 01.
+Подключения:
+	TH1992B Ch1:	APL
+	TH1992B Ch2:	APR
+	TH2690A:		ФДУК
+python axes_scanner.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I TH2690A_1:FDUK_AUTO -g TH2690A_1.CURR -x APL -tf 2026.09.18_task_01.txt
+
+
+Эксперимент 02.
+Подключения:
+	TH1992B Ch1:	APL
+	TH1992B Ch2:	APR
+	TH2690A:		ФДУК
+python axes_scanner.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I TH2690A_1:FDUK_AUTO -g TH2690A_1.CURR -x APL -tf 2026.09.18_task_02.txt
+
+
+Эксперимент 03.
+Подключения:
+	TH1992B Ch1:	APT
+	TH1992B Ch2:	APB
+	TH2690A:		ФДУК
+python axes_scanner.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I TH2690A_1:FDUK_AUTO -g TH2690A_1.CURR -x APB -tf 2026.09.18_task_03.txt
+
+
+Эксперимент 04.
+Подключения:
+	TH1992B Ch1:	APT
+	TH1992B Ch2:	APB
+	TH2690A:		ФДУК
+python axes_scanner.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I TH2690A_1:FDUK_AUTO -g TH2690A_1.CURR -x APB -tf 2026.09.18_task_04.txt
+
+
+Эксперимент 05.
+Подключения:
+	TH1992B Ch1:	APT
+	TH1992B Ch2:	APB
+	TH2690A:		ФДУК
+python axes_scanner.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I TH2690A_1:FDUK_AUTO -g TH2690A_1.CURR -x APB -tf 2026.09.18_task_05.txt
+
+
+Эксперимент 06.
+Подключения:
+	TH1992B Ch1:	APL
+	TH1992B Ch2:	APR
+	TH2690A:		ФДУК
+python axes_scanner.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I TH2690A_1:FDUK_AUTO -g TH2690A_1.CURR -x APR -tf 2026.09.18_task_06.txt
+
+
+Эксперимент 07.
+Подключения:
+	TH1992B Ch1:	APT
+	TH1992B Ch2:	APB
+	TH2690A:		ФДУК
+python axes_scanner.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I TH2690A_1:FDUK_AUTO -g TH2690A_1.CURR -x APB -tf 2026.09.18_task_07.txt

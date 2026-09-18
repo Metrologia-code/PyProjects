@@ -1,0 +1,2 @@
+#APT	APL	APR	APB	intvls	post_delay	filename
+-0.5:0.5	0.5	0.5	-0.5:0.5	100	0.0	04_APT_APB_-0_5_to_0_5.txt #Синхронное раскрытие APT и APB
