@@ -4,12 +4,28 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FuncFormatter, MaxNLocator, FixedLocator
 
-# Глобальный паспорт физических размерностей измерительного комплекса
-# Используется при разборе старых строковых аргументов и при формировании подписей осей Y
-UNITS = {'CURR': 'I', 'VOLT': 'V', 'RES': 'Ohm'}
+# Полный ряд приставок СИ, кратных трём: показатель степени -> приставка
+SI_PREFIXES = {
+    -30: 'q', -27: 'r', -24: 'y', -21: 'z', -18: 'a', -15: 'f',
+    -12: 'p', -9: 'n', -6: 'µ', -3: 'm', 0: '', 3: 'k', 6: 'M',
+    9: 'G', 12: 'T', 15: 'P', 18: 'E', 21: 'Z', 24: 'Y', 27: 'R', 30: 'Q',
+}
 
 # Значения по умолчанию для параметров графика
 xLabel, plotName, plotPoints = 'x', 'Test', 100
+
+
+def format_si(value, unit):
+    ''' Форматирует число как .3f с физической приставкой СИ и базовой единицей.
+        Пример: -9.0e-11, 'A' -> "-90.000 pA". '''
+    if not np.isfinite(value):
+        return ""
+    if value == 0:
+        return f"{0.0:.3f} {unit}".strip()
+    exponent = int(np.floor(np.log10(abs(value))))
+    exponent = max(-30, min(30, 3 * (exponent // 3)))
+    scaled = value / 10 ** exponent
+    return f"{scaled:.3f} {SI_PREFIXES[exponent]}{unit}".strip()
 
 
 class PlotConfig:
@@ -28,22 +44,18 @@ class PlotConfig:
         # Раскладка полотен: сейчас всегда один столбец (полотна вертикально)
         self.n_cols = 1
         # Механизм автоматической раскладки и отступы между полотнами
-        # ('constrained' резервирует место под подписи, заголовки и легенды сам)
+        # ('constrained' сам резервирует место под подписи, заголовки и легенды)
         self.layout_engine = 'constrained'
         self.h_pad = 0.35
         self.w_pad = 0.25
         self.share_x = True
         # Палитра линий
         self.colors = ['b', 'r', 'g', 'm', 'c', 'k']
-        # Отступ между соседними осями Y в долях оси (axes-fraction)
-        self.y_axis_spacing = 0.09
-        # Запас ширины окна на каждую дополнительную ось Y (дюймы)
-        self.figure_width_step = 1.2
+        # Отступ между соседними осями Y в точках (не зависит от размера окна)
+        self.y_axis_spacing = 90
         # Минимальный интервал между перерисовками (сек). Данные обновляются чаще,
         # экран — не чаще этого интервала. Значение <= 0 означает рисовать каждый кадр
         self.render_period = 0.2
-        # Замораживать раскладку после первого расчёта (пересчёт только при изменениях)
-        self.freeze_layout = True
         # Максимальное количество тиков на осях
         self.max_y_ticks = 12
         self.max_x_ticks = 18
@@ -67,7 +79,6 @@ class PlotConfig:
         'height': ('figure_size', 1, float),
         'canvas_height': ('canvas_height', None, float),
         'n_cols': ('n_cols', None, int),
-        'figure_width_step': ('figure_width_step', None, float),
     }
 
     @classmethod
@@ -115,7 +126,6 @@ class Plotter:
         {'device', 'key', 'channel', 'value', 'unit', 'canvas'}.
     Поле 'canvas' задает имя полотна (subplot) внутри окна. Окно всегда одно,
     полотна располагаются вертикально одно под другим.
-    Для обратной совместимости допускаются строки вида 'ИмяПрибора.Параметр'.
 
     Параметры конструктора
     - args: список описаний кривых.
@@ -126,8 +136,12 @@ class Plotter:
 
     Распределение по осям и цвета
     Кривые каждого полотна делятся пополам: первая половина выводится на левую ось Y, вторая — на правую.
-    Внутри одной стороны соседние оси Y раздвигаются на долю оси (config.y_axis_spacing), чтобы не перекрываться.
+    Внутри одной стороны соседние оси Y раздвигаются наружу на фиксированное число точек (config.y_axis_spacing), чтобы не перекрываться.
     Цвет линии задается порядковым номером в общем списке args и берется из палитры config.colors.
+
+    Формат оси Y
+    Тики оси Y всегда выводятся как .3f с физической приставкой СИ и базовой единицей
+    (например, -90.000 nA, 1.234 mA, 4.560 MOhm). Научной нотации и offset-текста 1eN нет.
 
     Поведение при отсутствии данных
     Если в словаре results нет прибора или параметра, в данные подставляется NaN. Линия в этой точке разрывается.
@@ -164,16 +178,13 @@ class Plotter:
             self.canvases[plot_name] = []
 
         #2. Инициализация окна с полотнами (один столбец, полотна вертикально).
-        #   Ширину окна заранее увеличиваем под дополнительные оси Y, а место под
-        #   подписи/заголовки резервирует layout-движок 'constrained'
+        #   Место под подписи, тики и заголовки резервирует layout-движок 'constrained'
         n_canvases = len(self.canvas_order)
         height = max(self.config.figure_size[1], self.config.canvas_height * n_canvases)
-        max_extra_left, max_extra_right = self._count_extra_axes()
-        width = self.config.figure_size[0] + (max_extra_left + max_extra_right) * self.config.figure_width_step
         plt.ion()
         self.fig, axes = plt.subplots(
             n_canvases, self.config.n_cols,
-            figsize=(width, height),
+            figsize=(self.config.figure_size[0], height),
             sharex=self.config.share_x, squeeze=False,
             layout=self.config.layout_engine
         )
@@ -211,8 +222,6 @@ class Plotter:
                 'line_obj': None,
                 'is_left': is_left,
                 'side_index': side_index,
-                'order': 0,
-                'y_max': 0.0,
                 'canvas': spec['canvas'],
                 'base_ax': self.canvas_axes[spec['canvas']],
             }
@@ -230,107 +239,29 @@ class Plotter:
             if handles:
                 base_ax.legend(handles, labels, loc=self.config.legend_loc, fontsize=self.config.font_legend)
 
-        #5. Один расчёт раскладки и её заморозка; дальше рендер дешёвый.
-        #   Перед расчётом резервируем место под самую длинную подпись оси Y
-        #   (с запасом под экспоненту), чтобы при смене порядка не пересчитывать раскладку
         self._last_render_time = float('-inf')
-        self._reserve_ylabel_space()
-        self._solve_layout()
-        self._restore_ylabels()
-
-    def _set_ylabel(self, cfg, text):
-        ax = cfg['line_obj'].axes
-        ax.set_ylabel(ylabel=text, fontname='Arial', fontsize=self.config.font_tick)
-        ax.yaxis.label.set_color(cfg['line_obj'].get_color())
-
-    def _reserve_ylabel_space(self):
-        # Резервируем ширину под подпись с любым возможным порядком (1e-99)
-        for line_id in self.line_order:
-            cfg = self.lines[line_id]
-            if cfg['line_obj'] is not None:
-                self._set_ylabel(cfg, self._axis_label(cfg, cfg['order']) + ' (1e-99)')
-
-    def _restore_ylabels(self):
-        for line_id in self.line_order:
-            cfg = self.lines[line_id]
-            if cfg['line_obj'] is not None:
-                self._set_ylabel(cfg, self._axis_label(cfg, cfg['order']))
-
-    def _count_extra_axes(self):
-        # Максимальное число дополнительных (сверх одной) осей Y слева и справа
-        # по всем полотнам. Нужно для запаса ширины окна.
-        max_extra_left = 0
-        max_extra_right = 0
-        for canvas_specs in self.canvases.values():
-            count = len(canvas_specs)
-            if count == 0:
-                continue
-            if self.config.split_left_right:
-                left_count = (count + 1) // 2
-            else:
-                left_count = count
-            right_count = count - left_count
-            max_extra_left = max(max_extra_left, max(0, left_count - 1))
-            max_extra_right = max(max_extra_right, max(0, right_count - 1))
-        return max_extra_left, max_extra_right
 
     #---НОРМАЛИЗАЦИЯ ОПИСАНИЙ КРИВЫХ---
     def _normalize_item(self, item, default_canvas):
-        if isinstance(item, dict):
-            device = item.get('device', '')
-            key = item.get('key', '')
-            value = item.get('value', key)
-            channel = item.get('channel')
-            unit = item.get('unit', '') or self._unit_from_key(value)
-            canvas = item.get('canvas') or default_canvas
-            label = item.get('label') or self._make_label(device, channel, value)
-        else:
-            #Обратная совместимость: строка 'ИмяПрибора.Параметр'
-            source = str(item)
-            device, key = source.split('.', 1)
-            channel = ''.join(ch for ch in key if ch.isdigit()) or None
-            value = ''.join(ch for ch in key if not ch.isdigit()) or key
-            unit = self._unit_from_key(value)
-            canvas = default_canvas
-            label = source
-
+        device = item.get('device', '')
+        key = item.get('key', '')
+        value = item.get('value', key)
+        channel = item.get('channel')
         return {
             'id': f"{device}.{key}",
             'device': device,
             'key': key,
             'value': value,
-            'unit': unit,
+            'unit': item.get('unit', ''),
             'channel': channel,
-            'canvas': canvas,
-            'label': label,
+            'canvas': item.get('canvas') or default_canvas,
+            'label': item.get('label') or self._make_label(device, channel, value),
         }
 
     @staticmethod
     def _make_label(device, channel, value):
         name = f"{device}.ch{channel}" if channel else device
         return f"{name}={value}"
-
-    @staticmethod
-    def _unit_from_key(value):
-        legacy_units = {'I': 'A', 'V': 'V', 'Ohm': 'Ohm'}
-        for token, unit in UNITS.items():
-            if token in value:
-                return legacy_units.get(unit, unit)
-        return ''
-
-    def _calc_order(self, max_abs):
-        # Порядок оси (декада множителя 1eN) по максимуму окна; меняется только если
-        # максимум выходит за пределы [1e-3, 1e3]
-        if max_abs <= 0:
-            return 0, 0.0
-        raw_order = int(np.floor(np.log10(max_abs)))
-        return (raw_order if abs(raw_order) >= 3 else 0), max_abs
-
-    def _axis_label(self, cfg, order):
-        unit = cfg['unit']
-        if order != 0:
-            return f"{cfg['label']}, {unit} (1e{order})" if unit else f"{cfg['label']} (1e{order})"
-        return f"{cfg['label']}, {unit}" if unit else cfg['label']
 
     def _init_axis(self, cfg):
         # Первая линия полотна использует базовую ось, остальные - twinx с отступом
@@ -342,33 +273,15 @@ class Plotter:
             side = 'left' if cfg['is_left'] else 'right'
             target_ax.yaxis.set_label_position(side)
             target_ax.yaxis.set_ticks_position(side)
-            # Сдвиг оси в долях оси (axes-fraction): не зависит от DPI и размера окна
-            if side == 'right':
-                spine_pos = ('axes', 1.0 + cfg['side_index'] * self.config.y_axis_spacing)
-            else:
-                spine_pos = ('axes', -cfg['side_index'] * self.config.y_axis_spacing)
-            target_ax.spines[side].set_position(spine_pos)
+            # Сдвиг оси наружу на фиксированное число точек: не зависит от размера окна
+            target_ax.spines[side].set_position(('outward', cfg['side_index'] * self.config.y_axis_spacing))
 
         cfg['line_obj'], = target_ax.plot(self.xdata, cfg['ydata'], label=cfg['label'], color=cfg['color'])
 
-        # Максимум окна и порядок оси вычисляются из уже накопленных точек
-        cfg['y_max'] = 0.0
-        for y in cfg['ydata']:
-            if not np.isnan(y):
-                a = abs(y)
-                if a > cfg['y_max']:
-                    cfg['y_max'] = a
-        cfg['order'], _ = self._calc_order(cfg['y_max'])
-
-        # Делит значения на порядок оси, чтобы подписи были читаемыми, и добавляет множитель (1eN) к подписи оси.
-        # Форматтер читает cfg['order'] "на лету" — при смене порядка переустанавливать его не требуется
-        target_ax.yaxis.set_major_formatter(
-            FuncFormatter(lambda y, pos:
-                f"{y/(10**cfg['order']):.3g}" if cfg['order'] != 0 else f"{y:.3g}")
-        )
-
-        target_ax.set_ylabel(ylabel=self._axis_label(cfg, cfg['order']), fontname='Arial',
-                             fontsize=self.config.font_tick)
+        # Тики Y - всегда .3f с приставкой СИ (научной нотации и offset-текста нет)
+        unit = cfg['unit']
+        target_ax.yaxis.set_major_formatter(FuncFormatter(lambda value, pos: format_si(value, unit)))
+        target_ax.set_ylabel(ylabel=cfg['label'], fontname='Arial', fontsize=self.config.font_tick)
         target_ax.yaxis.label.set_color(cfg['line_obj'].get_color())
         target_ax.tick_params(axis='y', labelcolor=cfg['line_obj'].get_color(), labelsize=9)
         target_ax.spines[target_ax.yaxis.get_label_position()].set_color(cfg['line_obj'].get_color())
@@ -379,7 +292,7 @@ class Plotter:
         if len(self.xdata) > self.x_pts:
             self.xdata = self.xdata[1:]
 
-        #1. Обновляем данные и определяем порядок осей (дёшево, без отрисовки)
+        #1. Обновляем данные (дёшево, без отрисовки)
         for line_id in self.line_order:
             cfg = self.lines[line_id]
             dev_data = results.get(cfg['device'], {})
@@ -389,38 +302,7 @@ class Plotter:
                     raw_val = float(raw_val)
                 except ValueError:
                     raw_val = float('nan')
-
             cfg['ydata'].append(raw_val)
-
-            # Инкрементальное ведение максимума окна (O(1) на шаг);
-            # полный пересчет по окну — только когда максимум покидает окно (редко)
-            if len(cfg['ydata']) > self.x_pts:
-                old_head = cfg['ydata'][0]
-                cfg['ydata'] = cfg['ydata'][1:]
-                if not np.isnan(old_head) and abs(old_head) >= cfg['y_max']:
-                    cfg['y_max'] = 0.0
-                    for y in cfg['ydata']:
-                        if not np.isnan(y):
-                            a = abs(y)
-                            if a > cfg['y_max']:
-                                cfg['y_max'] = a
-            raw_abs = abs(raw_val) if not np.isnan(raw_val) else 0.0
-            if raw_abs > cfg['y_max']:
-                cfg['y_max'] = raw_abs
-
-            if cfg['line_obj'] is None:
-                self._init_axis(cfg)
-
-            # Автоподбор порядка оси по текущему максимуму с гистерезисом (мертвая зона x10):
-            # порядок меняется только когда максимум вышел за границы соседней декады
-            new_order, max_abs = self._calc_order(cfg['y_max'])
-            if max_abs > 0 and new_order != cfg['order']:
-                cur_pow = 10 ** cfg['order'] if cfg['order'] != 0 else 1.0
-                if max_abs >= cur_pow * 10 or max_abs <= cur_pow * 0.1:
-                    cfg['order'] = new_order
-                    # Место под подпись любого порядка зарезервировано заранее,
-                    # поэтому раскладку пересчитывать не нужно
-                    self._set_ylabel(cfg, self._axis_label(cfg, cfg['order']))
 
         #2. Отрисовку выполняем не чаще render_period, чтобы не тормозить цикл измерения
         now = time.perf_counter()
@@ -462,15 +344,6 @@ class Plotter:
             # После заполнения окна фиксируем диапазон X, чтобы autoscale_view не растягивал ось за пределы данных
             if len(self.xdata) >= self.x_pts:
                 base_ax.set_xlim(self.xdata[0], self.xdata[-1])
-
-    def _solve_layout(self):
-        # Первый расчёт автоматической раскладки; при freeze_layout движок затем выключается,
-        # чтобы не решать задачу раскладки на каждом кадре
-        if not self.config.freeze_layout:
-            return
-        self.fig.set_layout_engine(self.config.layout_engine)
-        self.fig.canvas.draw()
-        self.fig.set_layout_engine('none')
 
     def save_figure(self, file_path):
         plt.savefig(file_path + '.png')

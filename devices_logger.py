@@ -21,8 +21,7 @@ arg_parser.add_argument('-pl', '--plot', nargs='+', type=str, default=None,
     help="Настройки окна графиков в формате key=value (габариты):\n"
          "  width=<дюймы>, height=<дюймы> — размер окна;\n"
          "  canvas_height=<дюймы> — высота одного полотна;\n"
-         "  n_cols=<число> — число колонок полотен;\n"
-         "  figure_width_step=<дюймы> — запас ширины на дополнительную ось Y.")
+         "  n_cols=<число> — число колонок полотен.")
 
 arg_parser.add_argument('-np', '--noplot', action='store_true',
     help="Отключить построение графиков, даже если полотна указаны в -d.")

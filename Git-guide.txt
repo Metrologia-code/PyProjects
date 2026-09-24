@@ -98,3 +98,21 @@ git status
 :wq
 #отказаться от объединения
 :q!
+
+#***********Работа с веткой:
+#Создать новую ветку и переключить на неё; файлы при этом не меняются.
+git checkout -b new_branch_name
+#Обновить список веток и меток с сервера
+git fetch --all --tags
+#Заменяем master содержимым ветки rework
+git checkout master
+git merge --ff-only rework
+git push origin master
+#Переключиться на ветку (если локальной нет — создастся автоматически и привяжется к origin)
+git checkout branch_name
+#Переключиться на конкретный коммит
+git checkout 1dbe03b
+#Вернуться обратно на основную ветку
+git checkout master
+#Обновить текущую ветку до последней версии с сервера
+git pull
