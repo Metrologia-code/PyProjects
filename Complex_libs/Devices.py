@@ -70,3 +70,21 @@ class Devices:
 
             self.device_columns[device_name] = columns
             self.device_data_keys[device_name] = [column['key'] for column in columns]
+
+    def reconnect(self, device_name):
+        ''' Повторное подключение и настройка прибора после потери связи.
+            Ничего не знает о внутренностях драйвера: просто заново вызывает
+            Initialize/ConfigureDevice/пробный опрос. Возвращает True или False. '''
+        device = self.devices[device_name]
+        try:
+            if not device.Initialize(**self.devices_pool[device_name].copy()):
+                return False
+            if not device.ConfigureDevice(ConfigName=self.req_devices[device_name]['Config']):
+                return False
+            for attempt in range(3):
+                if isinstance(device.SingleMeasure(), dict):
+                    return True
+                time.sleep(0.5)
+            return False
+        except Exception:
+            return False

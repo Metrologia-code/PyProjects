@@ -143,6 +143,13 @@ class Device():
         #создаем объект ResourceManager, если его еще нет
         if not hasattr(self, 'rm'):
             self.rm = pyvisa.ResourceManager()
+        #повторный вызов (переподключение): закрываем прежнее соединение, если оно было
+        old = getattr(self, 'tonghui', None)
+        if old is not None:
+            try:
+                old.close()
+            except Exception:
+                pass
         Open = {'TCPIP':self._OpenTCPIP, 'USBTCM':self._OpenUSBTCM, }
         return Open[ConnectionMethod](**ConnectionDetails)
     
