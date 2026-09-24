@@ -1,4 +1,5 @@
 import argparse
+import os
 import time
 from Motion_control import Controller, InitSpeed, MoveBlades
 from Complex_libs.Devices import Devices
@@ -9,8 +10,10 @@ from measurement import MeasurementSession
 arg_parser = argparse.ArgumentParser(
     description="Программа для автоматизации серии экспериментов сканирования щелью.")
 arg_parser.add_argument('-d', '--devices', nargs='+', type=str, required=True,
-    help="Имена приборов и их конфигов,\n"
-         "например: -d TH1992B_1.1:FDUCK_I TH1992B_1.2:APL_I TH2690A_1:PICOAMMETER_TEST_1.")
+    help="Описание устройств в формате\n"
+         "<имя>[.ch<номер>][~<пресет>]=<величины>[;ch<номер>[~<пресет>]=<величины>...],\n"
+         "где каждая величина — <величина>[@<имя_полотна>].\n"
+         "Пример: TH1992B_1.ch1~FDUCK_I=CURR,RES;ch2~APL_I=CURR TH2690A_1~PICOAMMETER_TEST_1=CURR")
 arg_parser.add_argument('-r', '--run', nargs='+', type=int, default=None,
     help="Индексы экспериментов для запуска (например: -r 0 2 3).\n"
          "Если параметр не указан — запустятся ВСЕ эксперименты из файла.")
@@ -18,14 +21,22 @@ arg_parser.add_argument('-tf', '--taskfile', type=str, default='Axes_scan_defaul
     help="Путь к текстовому файлу с таблицей заданий. По умолчанию: 'Axes_scan_default.txt'.")
 arg_parser.add_argument('-fs', '--faststart', action='store_true',
     help="Запуск измерений без предварительной настройки приборов.")
-arg_parser.add_argument('-g', '--graph', nargs='+', type=str, default=None,
-    help="Имена каналов и трансформаций для вывода на график,\n"
-         "например: -g TH1992B_1.CURR1 TH1992B_1.RES1=T1:Pt100_default")
+arg_parser.add_argument('-pl', '--plot', nargs='+', type=str, default=None,
+    help="Настройки окна графиков в формате key=value (габариты):\n"
+         "  width=<дюймы>, height=<дюймы> — размер окна;\n"
+         "  canvas_height=<дюймы> — высота одного полотна;\n"
+         "  n_cols=<число> — число колонок полотен;\n"
+         "  figure_width_step=<дюймы> — запас ширины на дополнительную ось Y.")
+arg_parser.add_argument('-np', '--noplot', action='store_true',
+    help="Отключить построение графиков, даже если полотна указаны в -d.")
+arg_parser.add_argument('-ho', '--hold', action='store_true',
+    help="Не закрывать окно графиков по завершении программы — ждать закрытия пользователем.")
 arg_parser.add_argument('-sf', '--singlefile', action='store_true',
     help="Сохранять результаты всех экспериментов в один файл.")
 arg_parser.add_argument('-x', '--xaxis', type=str, default='time',
     choices=['time', 'APT', 'APL', 'APR', 'APB'],
-    help="Ось X для графика. Возможные значения:\n"
+    help="Ось X для графика по умолчанию (если задание не переопределяет её столбцом x_axis).\n"
+         "Возможные значения:\n"
          "  time  — время (по умолчанию);\n"
          "  APT   — координата оси APT;\n"
          "  APL   — координата оси APL;\n"
@@ -44,26 +55,17 @@ InitSpeed(acs)
 #---ОБРАБОТКА ТАБЛИЦЫ ЗАДАНИЙ---
 all_tasks = ParseTaskFile(args.taskfile)
 tasks_to_run = args.run if args.run else range(len(all_tasks))
+#Режим для авто-имени файла результатов — имя файла задания без расширения
+mode_prefix = os.path.splitext(os.path.basename(args.taskfile))[0]
 SavePath = CreateSavePath(LAN_Path='\\\\MetroBulk\\Public\\EXP_DATA')
 
-#---ПОДГОТОВКА CALLBACK ДЛЯ ОСИ X ГРАФИКА---
-AXIS_NUMBERS = {'APT': 0, 'APL': 1, 'APR': 2, 'APB': 3}
-if args.xaxis == 'time':
-    x_callback = None
-    x_label = 't, сек'
-else:
-    ax_num = AXIS_NUMBERS[args.xaxis]
-    # x_callback читает координату из атрибута move_blades.last_positions,
-    # который обновляется при каждом вызове move_blades
-    x_callback = lambda n=ax_num: move_blades.last_positions[n]
-    x_label = f'{args.xaxis}, мм'
-
 #---ОСНОВНОЙ ЦИКЛ ЗАПУСКА ЭКСПЕРИМЕНТОВ---
+session = None
 for task_index in tasks_to_run:
     task = all_tasks[task_index]
     file_mode = 'a' if args.singlefile and task_index != tasks_to_run[0] else 'w'
     if file_mode == 'w':
-        full_save_path = get_experiment_file_info(task['filename'], SavePath)
+        full_save_path = get_experiment_file_info(task['filename'], SavePath, mode_prefix=mode_prefix)
 
     def move_blades(point_idx, task=task):
         if point_idx == 0:
@@ -73,6 +75,18 @@ for task_index in tasks_to_run:
         FP = [acs.get_fpos(ax['number']) for ax in task['axes']]
         move_blades.last_positions = FP
         return f'\t{FP[0]:.3f}\t{FP[1]:.3f}\t{FP[2]:.3f}\t{FP[3]:.3f}'
+
+    #Ось X для графика: столбец x_axis задания переопределяет глобальный -x
+    x_name = task['x_axis'] or args.xaxis
+    if x_name == 'time':
+        x_callback = None
+        x_label = 't, сек'
+    else:
+        ax_num = next(ax['number'] for ax in task['axes'] if ax['name'] == x_name)
+        # x_callback читает координату из атрибута move_blades.last_positions,
+        # который обновляется при каждом вызове move_blades
+        x_callback = lambda n=ax_num: move_blades.last_positions[n]
+        x_label = f'{x_name}, мм'
 
     prefix = 'time, s\tAPT pos, mm\tAPL pos, mm\tAPR pos, mm\tAPB pos, mm'
     session = MeasurementSession(
@@ -91,5 +105,7 @@ for task_index in tasks_to_run:
         num_points=task['intervals'] + 1
     )
 
-if 'session' in locals() and session.Plots:
+# Конец программы: окно графика по умолчанию закрывается вместе с процессом,
+# ключ -ho/--hold удерживает его открытым до закрытия пользователем
+if session is not None and session.Plots is not None and args.hold:
     session.Plots.keep_open()

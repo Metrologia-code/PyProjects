@@ -28,7 +28,7 @@ class Device:
             curr1 = -9e-11 * (10 ** k) * (1 + random.uniform(-0.02, 0.02))
         results = {
             'CURR1': curr1,
-            'VOLTage1': 12.0 + random.uniform(-0.5, 0.5),
+            'VOLT1': 12.0 + random.uniform(-0.5, 0.5),
             'RES1':  100.0 + random.uniform(-2.0, 2.0),
             'CURR2': 4.5e-12 + random.uniform(-5e-13, 5e-13),
             'VOLT2': 5.0 + random.uniform(-0.2, 0.2),

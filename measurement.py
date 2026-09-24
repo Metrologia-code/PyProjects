@@ -4,7 +4,7 @@ import threading
 import signal
 import os
 from Complex_libs.Devices import Devices
-from User_libs import build_file_header, Plotter
+from User_libs import build_file_header, Plotter, PlotConfig
 
 class MeasurementSession:
     def __init__(self, args, instruments, file_path, file_mode='w', header_prefix='time, s', 
@@ -27,7 +27,9 @@ class MeasurementSession:
         signal.signal(signal.SIGINT, self._handle_sigint)
         # Подготовка графика
         self.Plots = None
-        if args.graph:
+        noplot = getattr(args, 'noplot', False)
+        if args.graph and not noplot:
+            plot_config = PlotConfig.from_cli(getattr(args, 'plot', None) or [])
             import matplotlib.pyplot as plt
             plt.close('all')
             time.sleep(0.5)
@@ -36,8 +38,11 @@ class MeasurementSession:
                 args=args.graph, 
                 x_label=self.x_label, 
                 plot_name=f"Измерение", 
-                x_pts=canvas_points
+                x_pts=canvas_points,
+                config=plot_config
             )
+        elif args.graph and noplot:
+            print("Построение графиков отключено (-np)")
         self.start_time = time.time()
 
     def _handle_sigint(self, signum, frame):
@@ -53,7 +58,7 @@ class MeasurementSession:
         try:
             with open(self.file_path, self.file_mode, encoding='utf-8') as file:
                 if self.file_mode == 'w':
-                    file.write(build_file_header(data_keys=self.Instruments.device_data_keys, prefix=self.header_prefix))
+                    file.write(build_file_header(data_columns=self.Instruments.device_columns, prefix=self.header_prefix))
                     file.flush()  # Заголовок сбрасываем сразу
                 last_flush_minute = 0
                 for point_idx in range(num_points):

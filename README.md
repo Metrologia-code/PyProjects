@@ -15,8 +15,9 @@ instruction.txt                     # Документация CLI обеих п
 requirements.txt                    # Список зависимостей
 AGENTS.md                           # Руководство для агентов
 ├── Complex_libs/                   # Управление измерительным комплексом
-│   ├── Devices.ini                 # Пул приборов: подключения и драйверы
-│   └── Devices.py                  # Чтение пула, разбор CLI, динамический импорт драйверов
+│   ├── Devices.ini                 # Пул приборов: type/model/interface/address/channels/values/units
+│   ├── DeviceSpecParser.py         # Разбор Devices.ini и аргумента -d нового синтаксиса
+│   └── Devices.py                  # Инициализация драйверов, пробный опрос, список колонок
 ├── User_libs/                      # Вспомогательные библиотеки
 │   ├── pyTools.py                  # Парсеры, пути файлов, трансформации (Pt100→температура)
 │   ├── pyPlotter.py                # Plotter: графики в реальном времени
@@ -34,11 +35,11 @@ AGENTS.md                           # Руководство для агенто
 ├── Axes_scan_default.txt           # Дефолтный файл заданий для axes_scanner
 ├── EXP*.txt                        # Файлы заданий экспериментов (вход сканера)
 ├── Axes_scan_task_*.txt            # Файлы заданий экспериментов
-├── 2029.09.10_*.txt                # Файлы заданий экспериментов
+├── 2026.09.10_*.txt                # Файлы заданий экспериментов
 ├── end_switch.txt                  # Файл заданий (проверка концевиков)
 ├── Axes_test_task_01.txt           # Тестовый файл заданий
 ├── Data/                           # Рабочий каталог данных (в .gitignore)
-├── Temp/                           # Рабочий каталог данных (в .gitignore)
+├── Temp/                           # Рабочий каталог данных (НЕ в .gitignore)
 └── Legacy/                         # Древние программы (не трогать)
 ```
 
@@ -47,14 +48,18 @@ AGENTS.md                           # Руководство для агенто
 Пример для `devices_logger.py`:
 
 ```
-python devices_logger.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I TH2690A_1:FDUK -g TH1992B_1.CURR1 TH1992B_1.CURR2 TH2690A_1.CURR -n 300 -cp 200 -fs
+python devices_logger.py -d "TH1992B_1.ch1~APL_I=CURR,VOLT@current;ch2~APL_I=CURR@current" "TH2690A_1~FDUK=CURR@current" -n 300 -cp 200 -fs
 ```
 
 Пример для `axes_scanner.py`:
 
 ```
-python axes_scanner.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I -g TH1992B_1.CURR1 TH1992B_1.CURR2 -tf EXP2_APL+APT.txt
+python axes_scanner.py -d "TH1992B_1.ch1~APL_I=CURR,RES@scan;ch2~APL_I=CURR@scan" -tf EXP2_APL+APT.txt
 ```
+
+Синтаксис `-d`: `<имя>[.ch<номер>][~<пресет>]=<величины>[;ch<номер>...]`, каждая величина — `<величина>[@<имя_полотна>]`. Указание `@` выводит величину на график (полотна одного окна располагаются вертикально), отсутствие `~` означает запуск без настройки прибора.
+
+Габариты окна/полотен задаются ключом `-pl` (например, `-pl width=12 height=6 canvas_height=2.5`), а `-np` отключает построение графиков, даже если `@` указаны в `-d`. По умолчанию окно графика закрывается по завершении программы; ключ `-ho` (`--hold`) оставляет его открытым до закрытия пользователем.
 
 Полное описание аргументов — в `instruction.txt`, правила работы с репозиторием — в `AGENTS.md`.
 

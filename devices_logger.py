@@ -9,13 +9,26 @@ arg_parser = argparse.ArgumentParser(
     description="Программа для логирования данных с приборов.")
 
 arg_parser.add_argument('-d', '--devices', nargs='+', type=str, required=True,
-    help="Имена приборов и их конфигов")
+    help="Описание устройств в формате\n"
+         "<имя>[.ch<номер>][~<пресет>]=<величины>[;ch<номер>[~<пресет>]=<величины>...],\n"
+         "где каждая величина — <величина>[@<имя_полотна>].\n"
+         "Пример: TH1992B_1.ch1~TEST_VOLT=CURR,VOLT@p1;ch2=CURR@p1 TH2690A_1~PRESET_1=CURR@p2")
 
 arg_parser.add_argument('-fs', '--faststart', action='store_true',
     help="Запуск измерений без предварительной настройки приборов.")
 
-arg_parser.add_argument('-g', '--graph', nargs='+', type=str, default=None,
-    help="Имена каналов для вывода на график")
+arg_parser.add_argument('-pl', '--plot', nargs='+', type=str, default=None,
+    help="Настройки окна графиков в формате key=value (габариты):\n"
+         "  width=<дюймы>, height=<дюймы> — размер окна;\n"
+         "  canvas_height=<дюймы> — высота одного полотна;\n"
+         "  n_cols=<число> — число колонок полотен;\n"
+         "  figure_width_step=<дюймы> — запас ширины на дополнительную ось Y.")
+
+arg_parser.add_argument('-np', '--noplot', action='store_true',
+    help="Отключить построение графиков, даже если полотна указаны в -d.")
+
+arg_parser.add_argument('-ho', '--hold', action='store_true',
+    help="Не закрывать окно графиков по завершении программы — ждать закрытия пользователем.")
 
 arg_parser.add_argument('-p', '--period', type=float, default=1.0,
     help="Период одного шага измерения в секундах")
@@ -36,7 +49,7 @@ Instruments = Devices(args)
 
 #---ПОДГОТОВКА ПУТИ---
 SavePath = CreateSavePath(LAN_Path='\\\\MetroBulk\\Public\\EXP_DATA')
-full_save_path = get_experiment_file_info(args.filename, SavePath)
+full_save_path = get_experiment_file_info(args.filename, SavePath, mode_prefix='logger')
 
 #---ЗАПУСК ЛОГГЕРА---
 session = MeasurementSession(
@@ -58,3 +71,8 @@ print(f'''
 ''')
 
 session.run_measurement_loop(num_points=args.points)
+
+# Конец программы: окно графика по умолчанию закрывается вместе с процессом,
+# ключ -ho/--hold удерживает его открытым до закрытия пользователем
+if session is not None and session.Plots is not None and args.hold:
+    session.Plots.keep_open()

@@ -15,7 +15,7 @@ class Device:
 
     def SingleMeasure(self):
         results = {
+            'VOLT': 12.0 + random.uniform(-0.5, 0.5),
             'CURR': 2.2e-3 + random.uniform(-1e-4, 1e-4),
-            'RES':  50.0 + random.uniform(-1.0, 1.0)
         }
         return results

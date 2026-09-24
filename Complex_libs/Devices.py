@@ -1,23 +1,24 @@
 import sys
-import os
 import time
 import importlib
-import configparser
 
 #пользовательские библиотеки
-from User_libs import ReadINItoDict, ParseCommandLineDevices, process_and_print_devices
+from User_libs import process_and_print_devices
+from .DeviceSpecParser import DeviceSpecParser
 
 class Devices:
     def __init__(self, args):
-        #1. Считываем все доступные приборы из Devices.ini в пул
-        self.devices_pool = ReadINItoDict('Complex_libs', 'Devices.ini')
-        
-        #2. Передаем список из консоли и считанный пул приборов в функцию разбора
-        self.req_devices = ParseCommandLineDevices(args.devices, self.devices_pool)
-        
+        #1-2. Считываем Devices.ini и разбираем аргумент -d новым парсером
+        self.spec = DeviceSpecParser('Complex_libs', 'Devices.ini')
+        self.devices_pool = self.spec.pool
+        self.req_devices = self.spec.parse(args.devices)
+
+        #2a. Список графиков (@имя_полотна) становится аргументом args.graph
+        args.graph = self.spec.build_graphs(self.req_devices)
+
         #3. Обрабатываем режимы работы и выводим состав комплекса на экран
         process_and_print_devices(self.req_devices, args.faststart)
-        
+
         #4. Инициализируем и настраиваем приборы из запрошенного списка
         self.devices = {}
         for device_name, device_info in self.req_devices.items():
@@ -43,7 +44,9 @@ class Devices:
             self.devices[device_name] = device
             
         #5. Делаем пробный опрос приборов для фиксации ключей возвращаемых данных
+        #   и оставляем только те величины, которые были запрошены в аргументе -d
         self.device_data_keys = {}
+        self.device_columns = {}
         for device_name, device_obj in self.devices.items():
             probe_measure = False
             for attempt in range(3):
@@ -55,5 +58,15 @@ class Devices:
             if not probe_measure:
                 print(f"[ERROR] Не удалось выполнить пробное измерение для прибора {device_name}!")
                 sys.exit(1)
-                
-            self.device_data_keys[device_name] = list(probe_measure.keys())
+
+            probe_keys = list(probe_measure.keys())
+            columns = []
+            for column in self.req_devices[device_name]['Columns']:
+                if column['key'] in probe_keys:
+                    columns.append(column)
+                else:
+                    print(f"[WARNING] Прибор {device_name}: величина '{column['value']}' "
+                          f"не возвращается прибором и будет пропущена")
+
+            self.device_columns[device_name] = columns
+            self.device_data_keys[device_name] = [column['key'] for column in columns]
