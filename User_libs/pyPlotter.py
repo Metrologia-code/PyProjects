@@ -303,6 +303,9 @@ class Plotter:
                 except ValueError:
                     raw_val = float('nan')
             cfg['ydata'].append(raw_val)
+            # Обрезка скользящего окна Y симметрично X, иначе длины разойдутся и рендер упадёт
+            if len(cfg['ydata']) > self.x_pts:
+                cfg['ydata'] = cfg['ydata'][1:]
 
         #2. Отрисовку выполняем не чаще render_period, чтобы не тормозить цикл измерения
         now = time.perf_counter()
