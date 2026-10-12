@@ -18,9 +18,9 @@ python axes_scanner.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I TH2690A_1:FDUK -g 
 python devices_logger.py -d TH2690A_1:FDUK_AUTO -g TH2690A_1.CURR -n 7200 -cp 360
 #EXP2
 python axes_scanner.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I -g TH1992B_1.CURR1 TH1992B_1.CURR2 -tf EXP2_APL+APT.txt
-EXP3
+#EXP3
 python axes_scanner.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I TH2690A_1:FDUK_AUTO -g TH2690A_1.CURR -tf EXP3_MAPPING.txt -sf
-EXP4
+#EXP4
 python axes_scanner.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I TH2690A_1:FDUK_AUTO -g TH2690A_1.CURR -tf EXP4_OPENING.txt -x APT
 
 10.09.2026
@@ -33,6 +33,28 @@ python axes_scanner.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I TH2690A_1:FDUK_AUT
 python axes_scanner.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I TH2690A_1:FDUK_AUTO -g TH2690A_1.CURR -x APB -tf 2026.09.10_APB_small_scan.txt
 тест концевиков:
 python axes_scanner.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I -tf end_switch.txt
+
+
+28.09.2026
+python axes_scanner.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I TH2690A_1:FDUK_AUTO -g TH1992B_1.CURR1 -x APL -tf 2026.09.10_APL.txt
+python axes_scanner.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I TH2690A_1:FDUK_AUTO -g TH1992B_1.CURR2 -x APT -tf 2026.09.10_APT.txt
+
+python axes_scanner.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I TH2690A_1:FDUK_AUTO -g TH2690A_1.CURR -tf EXP3_MAPPING_2026_09_28.txt -sf
+
+python axes_scanner.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I TH2690A_1:FDUK_AUTO -g TH2690A_1.CURR -tf EXP4_OPENING_2026_09_28.txt -x APT
+
+python devices_logger.py -d TH1992B_1.1:APL_I TH1992B_1.2:APL_I TH2690A_1:FDUK_AUTO -g TH2690A_1.CURR -n 10800 -cp 10800
+
+
+
+
+
+
+
+
+
+
+
 
 ИЗВЕСТНЫЕ ПРОБЛЕМЫ:
 
