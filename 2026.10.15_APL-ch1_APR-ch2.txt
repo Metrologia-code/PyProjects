@@ -1,0 +1,3 @@
+#APT	APL	APR	APB	intvls	post_delay	filename	x_axis
+21	20:-20	-20:20	21	400	0.0	06_APL-ch1_20_to_-20_APR-ch2_-20_to_20.txt	APL
+21	-20:20	20:-20	21	400	0.0	07_APL-ch1_-20_to_20_APR-ch2_20_to_-20.txt	APL
