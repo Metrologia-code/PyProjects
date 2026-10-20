@@ -59,6 +59,11 @@ python axes_scanner.py -d "TH1992B_1.ch1~APL_I=CURR@curr,VOLT;ch2~APL_I=CURR@cur
 python axes_scanner.py -d "TH1992B_1.ch1~APL_I=CURR@curr,VOLT;ch2~APL_I=CURR@curr,VOLT" TH2690A_1~FDUK_AUTO=CURR@FDUK_curr -x APT -tf 2026.10.15_APB-ch1_APT-ch2.txt
 
 
+20.10.2026
+python axes_scanner.py -d "TH1992B_1.ch1~DIAMOND_10V=CURR@graph,VOLT,RES@graph;ch2~APL_I=CURR,VOLT" TH2690A_1~FDUK_AUTO=CURR -tf 2026.10.20_strip_scans.txt
+python axes_scanner.py -d "TH1992B_1.ch1~DIAMOND_10V=CURR@graph,VOLT,RES@graph;ch2~APL_I=CURR,VOLT" TH2690A_1~FDUK_AUTO=CURR -x APL -tf 2026.10.20_diamond_MAPPING_test.txt -sf
+python axes_scanner.py -d "TH1992B_1.ch1~DIAMOND_10V=CURR@graph,VOLT,RES@graph;ch2~APL_I=CURR,VOLT" TH2690A_1~FDUK_AUTO=CURR -x APL -tf 2026.10.20_diamond_MAPPING_01.txt -sf
+
 
 
 
